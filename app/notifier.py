@@ -8,7 +8,7 @@ import sys
 import requests
 
 
-def notify_asin(asin: str):
+def notify(asin: str):
     message = create_message_for_changed_image(asin)
     send_message_to_slack(message)
 
