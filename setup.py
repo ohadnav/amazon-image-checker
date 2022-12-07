@@ -16,7 +16,7 @@ base_packages = [
     'scrapy==2.7.1',
     'cronitor==4.6.0',
     'python-crontab==2.6.0',
-    'python-amazon-paapi==5.0.1'
+    'python-amazon-sp-api==0.17.5'
 ]
 
 dev_packages = docs_packages + test_packages
