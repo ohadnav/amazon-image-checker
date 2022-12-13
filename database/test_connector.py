@@ -1,9 +1,10 @@
 import os
 from datetime import datetime, timedelta
 
+from amazon_sp_api.images_api import ImageVariation
+from common.test_util import BaseTestCase
 from database import config
-from database.connector import MySQLConnector, ProductRead
-from database.test_util import BaseTestCase
+from database.connector import MySQLConnector, ProductRead, ProductReadDiff
 
 
 class MockMySQLConnector(MySQLConnector):
@@ -24,21 +25,13 @@ class MockMySQLConnector(MySQLConnector):
         os.environ['DB_DATABASE'] = 'test_database'
         os.environ['USER_ID'] = '1'
 
-    def create_images_history_table(self):
-        create_table_query = self.create_images_history_table_query()
-        self.cursor.execute(create_table_query)
-
-    def create_images_history_table_query(self) -> str:
-        return f'CREATE TABLE IF NOT EXISTS {config.IMAGES_HISTORY_TABLE} ' \
+    def create_images_table_query(self, table_name: str) -> str:
+        return f'CREATE TABLE IF NOT EXISTS {table_name} ' \
                f'(`{config.ASIN_FIELD}` VARCHAR(10) NOT NULL, ' \
                f'`{config.READ_TIME_FIELD}` DATETIME NOT NULL, ' \
-               f'`{config.IMAGE_URLS_FIELD}` JSON, ' \
+               f'`{config.IMAGE_VARIATIONS_FIELD}` JSON, ' \
                f'`{config.USER_ID_FIELD}` INT NOT NULL, ' \
                f'PRIMARY KEY (`{config.ASIN_FIELD}`, `{config.READ_TIME_FIELD}`))'
-
-    def create_schedule_table(self):
-        create_table_query = self.create_schedule_table_query()
-        self.cursor.execute(create_table_query)
 
     def create_schedule_table_query(self) -> str:
         return f'CREATE TABLE IF NOT EXISTS {config.SCHEDULE_TABLE} ' \
@@ -53,6 +46,7 @@ class MockMySQLConnector(MySQLConnector):
     def drop_test_tables(self):
         self.run_query(f'DROP TABLE IF EXISTS {config.SCHEDULE_TABLE}')
         self.run_query(f'DROP TABLE IF EXISTS {config.IMAGES_HISTORY_TABLE}')
+        self.run_query(f'DROP TABLE IF EXISTS {config.IMAGES_CHANGES_TABLE}')
 
     def drop_test_database(self):
         drop_db_query = 'DROP DATABASE IF EXISTS test_database;'
@@ -63,7 +57,8 @@ class MockMySQLConnector(MySQLConnector):
         self.run_query(create_db_query, with_db=False)
 
     def create_test_tables(self):
-        self.run_query(self.create_images_history_table_query())
+        self.run_query(self.create_images_table_query(config.IMAGES_HISTORY_TABLE))
+        self.run_query(self.create_images_table_query(config.IMAGES_CHANGES_TABLE))
         self.run_query(self.create_schedule_table_query())
 
     def kill_all(self):
@@ -71,16 +66,17 @@ class MockMySQLConnector(MySQLConnector):
         self.drop_test_database()
 
 
-class TestMySQLConnector(BaseTestCase):
+class BaseConnectorTestCase(BaseTestCase):
     def setUp(self) -> None:
-        self.mock_db = MockMySQLConnector()
+        self.mock_connector = MockMySQLConnector()
         self.define_const()
 
     def tearDown(self) -> None:
-        self.mock_db.kill_all()
+        self.mock_connector.kill_all()
 
     def define_const(self):
         self.today = datetime.today().replace(microsecond=0)
+        self.yesterday = self.today - timedelta(days=1)
         self.two_days_ago_date = self.today - timedelta(days=2)
         self.two_days_ago_str = self.two_days_ago_date.strftime('%Y-%m-%d')
         self.two_days_from_now_str = self.today.replace(day=self.today.day + 2).strftime('%Y-%m-%d')
@@ -88,16 +84,17 @@ class TestMySQLConnector(BaseTestCase):
         self.end_time = '23:59:59'
         self.asin_active = 'B01N4J6L3I'
         self.asin_inactive = 'B07JQZQZ4Z'
-        self.image_url1 = ['https://m.media-amazon.com/images/I/51Zy9Z9Z1a.jpg',
-            'https://m.media-amazon.com/images/I/51Zy9Z9Z1b.jpg']
-        self.image_url2 = ['https://m.media-amazon.com/images/I/51Zy9Z9Z2a.jpg',
-            'https://m.media-amazon.com/images/I/51Zy9Z9Z2b.jpg']
-
-    def test_get_asins_with_active_ab_test(self):
-        self.insert_ab_test()
-        self.insert_ab_test(is_active=False)
-        asins_with_active_ab_test = self.mock_db.get_asins_with_active_ab_test()
-        self.assertEqual(asins_with_active_ab_test, [self.asin_active])
+        self.image_variations1 = [
+            ImageVariation('MAIN', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1a.jpg', 2500, 2500),
+            ImageVariation('PT01', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1b.jpg', 500, 500),
+            ImageVariation('PT02', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1c.jpg', 500, 500)]
+        self.image_variations2 = [
+            ImageVariation('MAIN', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1a.jpg', 2500, 2500),
+            ImageVariation('PT01', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1B.jpg', 500, 500),
+            ImageVariation('PT02', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1C.jpg', 500, 500)]
+        self.product_read_today = ProductRead(self.asin_active, self.today, self.image_variations1)
+        self.product_read_yesterday = ProductRead(self.asin_active, self.two_days_ago_date, self.image_variations2)
+        self.product_read_diff = ProductReadDiff(self.product_read_today, self.product_read_yesterday)
 
     def insert_ab_test(self, is_active=True):
         query = f'INSERT INTO {config.SCHEDULE_TABLE} ' \
@@ -106,21 +103,26 @@ class TestMySQLConnector(BaseTestCase):
                 f'VALUES ("{self.asin_active}", "{self.start_time}", "{self.two_days_ago_str}", ' \
                 f'"{self.end_time}", "{self.two_days_from_now_str if is_active else self.two_days_ago_str}", ' \
                 f'{os.environ["USER_ID"]});'
-        self.mock_db.run_query(query)
+        self.mock_connector.run_query(query)
+
+
+class TestMySQLConnector(BaseConnectorTestCase):
+    def test_get_asins_with_active_ab_test(self):
+        self.insert_ab_test()
+        self.insert_ab_test(is_active=False)
+        asins_with_active_ab_test = self.mock_connector.get_asins_with_active_ab_test()
+        self.assertEqual(asins_with_active_ab_test, [self.asin_active])
 
     def test_get_last_product_read_empty_table(self):
-        last_product_read = self.mock_db.get_last_product_read(self.asin_active)
+        last_product_read = self.mock_connector.get_last_product_read(self.asin_active)
         self.assertEqual(last_product_read, None)
 
     def test_get_last_product_read(self):
-        product_read_yesterday = ProductRead(self.asin_active, self.two_days_ago_date, self.image_url1)
-        self.mock_db.insert_product_read(product_read_yesterday)
-        product_read_today = ProductRead(self.asin_active, self.today, self.image_url2)
-        self.mock_db.insert_product_read(product_read_today)
-        last_product_read = self.mock_db.get_last_product_read(self.asin_active)
-        self.assertEqual(last_product_read, product_read_today)
+        self.mock_connector.insert_product_read(self.product_read_yesterday)
+        self.assertEqual(self.mock_connector.get_last_product_read(self.asin_active), self.product_read_yesterday)
+        self.mock_connector.insert_product_read(self.product_read_today)
+        self.assertEqual(self.mock_connector.get_last_product_read(self.asin_active), self.product_read_today)
 
-    def test_insert_product_read(self):
-        product_read = ProductRead(self.asin_active, self.today, self.image_url1)
-        self.mock_db.insert_product_read(product_read)
-        self.assertEqual(product_read, self.mock_db.get_last_product_read(self.asin_active))
+    def test_insert_images_changes(self):
+        self.mock_connector.insert_images_changes(self.product_read_diff)
+        self.assertEqual(self.product_read_diff, self.mock_connector.get_last_images_changes(self.asin_active))

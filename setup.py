@@ -13,10 +13,12 @@ docs_packages = [
 base_packages = [
     'mysql-connector-python==8.0.31',
     'slack-sdk==3.19.2',
-    'scrapy==2.7.1',
-    'cronitor==4.6.0',
     'python-crontab==2.6.0',
-    'python-amazon-sp-api==0.17.5'
+    'python-amazon-sp-api==0.17.5',
+    'apache-airflow==2.5.0',
+    'apache-airflow-providers-cncf-kubernetes==5.0.0',
+    'dacite==1.6.0',
+    'pytest==7.1.1',
 ]
 
 dev_packages = docs_packages + test_packages
@@ -35,5 +37,5 @@ setup(
         'test': test_packages,
         'dev': dev_packages,
     },
-    python_requires='==3.10',
+    python_requires='==3.9',
 )

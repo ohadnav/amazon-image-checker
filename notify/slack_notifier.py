@@ -7,15 +7,18 @@ import sys
 
 import requests
 
+from database.connector import ProductReadDiff
 
-def notify(asin: str):
-    message = create_message_for_changed_image(asin)
+
+def notify(product_read_diff: ProductReadDiff):
+    message = create_message_for_changed_image(product_read_diff)
     send_message_to_slack(message)
 
 
-def create_message_for_changed_image(asin: str):
-    asin_url = f'https://www.amazon.com/dp/{asin}'
-    change_message = f'Image of {asin_url} has changed'
+def create_message_for_changed_image(product_read_diff: ProductReadDiff) -> str:
+    asin_url = f'https://www.amazon.com/dp/{product_read_diff.asin}'
+    variations_with_diff = set([image_variation.variant for image_variation in product_read_diff.image_variations])
+    change_message = f'Image of {asin_url} has changed in variations {", ".join(variations_with_diff)}'
     return change_message
 
 
