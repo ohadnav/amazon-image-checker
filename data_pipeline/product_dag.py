@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timedelta
 from time import strptime
 from typing import Optional
@@ -6,6 +5,7 @@ from typing import Optional
 from airflow import DAG
 
 from amazon_sp_api.images_api import ImagesApi
+from common import env_var
 from data_pipeline import airflow_args
 from database.connector import MySQLConnector, ProductRead, ProductReadDiff
 from notify.slack_notifier import notify
@@ -20,7 +20,7 @@ product_dag = DAG(
 
 def is_valid_image_change(current: ProductRead, last: ProductRead) -> Optional[ProductReadDiff]:
     product_read_diff = ProductReadDiff(current, last)
-    max_diff = strptime(os.environ['MAX_TIME_DIFFERENCE_IN_HOURS'], '%H')
+    max_diff = strptime(env_var.get('MAX_TIME_DIFFERENCE_IN_HOURS'), '%H')
     # convert to timedelta
     max_delta = timedelta(hours=max_diff.tm_hour)
     # diff between current and last read time

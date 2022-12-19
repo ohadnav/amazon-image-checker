@@ -2,11 +2,11 @@
 calculate whether the last image url from the database is different from the current image url
 '''
 import json
-import os
 import sys
 
 import requests
 
+from common import env_var
 from database.connector import ProductReadDiff
 
 
@@ -23,7 +23,7 @@ def create_message_for_changed_image(product_read_diff: ProductReadDiff) -> str:
 
 
 def send_message_to_slack(message: str):
-    webhook_url = os.environ['SLACK_WEBHOOK_URL']
+    webhook_url = env_var.get('SLACK_WEBHOOK_URL')
     slack_data = {'text': message}
     byte_length = str(sys.getsizeof(slack_data))
     headers = {'Content-Type': "application/json", 'Content-Length': byte_length}

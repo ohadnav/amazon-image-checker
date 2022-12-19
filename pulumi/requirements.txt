@@ -1,0 +1,9 @@
+mysql-connector-python==8.0.31
+slack-sdk==3.19.2
+python-crontab==2.6.0
+python-amazon-sp-api==0.17.5
+apache-airflow==2.5.0
+apache-airflow-providers-cncf-kubernetes==5.0.0
+dacite==1.6.0
+pulumi>=3.0.0,<4.0.0
+pulumi-aws>=5.0.0,<6.0.0
