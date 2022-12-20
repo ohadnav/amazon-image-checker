@@ -6,7 +6,7 @@ from airflow import DAG
 
 from amazon_sp_api.images_api import ImagesApi
 from common import env_var
-from data_pipeline import airflow_args
+from dags import airflow_args
 from database.connector import MySQLConnector, ProductRead, ProductReadDiff
 from notify.slack_notifier import notify
 

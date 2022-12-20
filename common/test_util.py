@@ -4,7 +4,6 @@ from typing import TypeVar
 from unittest import TestCase
 
 import numpy
-from numpy import long
 
 T = TypeVar('T')
 
@@ -36,7 +35,7 @@ class BaseTestCase(TestCase):
         is_root = not '__trace' in kwargs
         trace = kwargs.pop('__trace', 'ROOT')
         try:
-            if isinstance(expected, (int, float, long, complex)):
+            if isinstance(expected, (int, float, complex)):
                 self.assertEqual(expected, actual, *args, **kwargs)
             elif isinstance(expected, (list, tuple, numpy.ndarray)):
                 self.assertEqual(len(expected), len(actual))

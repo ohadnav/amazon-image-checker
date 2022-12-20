@@ -111,3 +111,5 @@ celerybeat.pid
 env/
 venv/
 pulumi/venv/
+
+/credentials.json
