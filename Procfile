@@ -1,1 +1,1 @@
-worker: python app/app.py
+clock: python scheduler/clock.py

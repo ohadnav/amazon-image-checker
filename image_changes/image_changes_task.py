@@ -1,16 +1,16 @@
+import os
 from datetime import datetime, timedelta
 from time import strptime
 from typing import Optional
 
 from amazon_sp_api.images_api import ImagesApi
-from common import env_var
 from database.connector import MySQLConnector, ProductRead, ProductReadDiff
 from notify.slack_notifier import notify
 
 
 def is_valid_image_change(current: ProductRead, last: ProductRead) -> Optional[ProductReadDiff]:
     product_read_diff = ProductReadDiff(current, last)
-    max_diff = strptime(env_var.get('MAX_TIME_DIFFERENCE_IN_HOURS'), '%H')
+    max_diff = strptime(os.environ['MAX_TIME_DIFFERENCE_IN_HOURS'], '%H')
     # convert to timedelta
     max_delta = timedelta(hours=max_diff.tm_hour)
     # diff between current and last read time

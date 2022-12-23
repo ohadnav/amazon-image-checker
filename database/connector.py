@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from typing import Any, List
@@ -10,7 +11,6 @@ import mysql.connector
 from mysql.connector import errorcode
 
 from amazon_sp_api.images_api import ImageVariation
-from common import env_var
 from database import config
 
 
@@ -47,9 +47,9 @@ class MySQLConnector:
 
     def connect_without_db(self):
         self.connection = mysql.connector.connect(
-            host=env_var.get('DB_HOST'),
-            user=env_var.get('DB_USER'),
-            password=env_var.get('DB_PASSWORD')
+            host=os.environ['DB_HOST'],
+            user=os.environ['DB_USER'],
+            password=os.environ['DB_PASSWORD']
         )
         self.cursor = self.connection.cursor(buffered=True, dictionary=True)
 
@@ -57,7 +57,7 @@ class MySQLConnector:
         if not self.connection or not self.connection.is_connected():
             self.connect_without_db()
         if self.connection:
-            self.connection.database = env_var.get('DB_DATABASE')
+            self.connection.database = os.environ['DB_DATABASE']
 
     def run_query(self, query: str, with_db=True) -> list[Any]:
         results = []
@@ -105,14 +105,14 @@ class MySQLConnector:
                  f' STR_TO_DATE({config.START_TIME_FIELD}, "%H:%i:%S") AS DATETIME)' \
                  f' AND CAST(CAST({config.END_DATE_FIELD} as DATETIME) + ' \
                  f' STR_TO_DATE({config.END_TIME_FIELD}, "%H:%i:%S") as DATETIME)' \
-                 f' AND {config.USER_ID_FIELD} = {env_var.get("USER_ID")}'
+                 f' AND {config.USER_ID_FIELD} = {os.environ["USER_ID"]}'
         return query
 
     def _select_last_product_read_query(self, asin: str, table_name: str) -> str:
         query = f'SELECT {config.IMAGE_VARIATIONS_FIELD}, {config.ASIN_FIELD}, {config.READ_TIME_FIELD} FROM ' \
                 f'{table_name} '
         query += f'WHERE {config.ASIN_FIELD}  = "{asin}"'
-        query += f' AND {config.USER_ID_FIELD} = {env_var.get("USER_ID")}'
+        query += f' AND {config.USER_ID_FIELD} = {os.environ["USER_ID"]}'
         query += f' ORDER BY {config.READ_TIME_FIELD} DESC LIMIT 1'
         return query
 
@@ -138,7 +138,7 @@ class MySQLConnector:
         query = f'INSERT INTO `{table_name}` (`{config.ASIN_FIELD}`, ' \
                 f'`{config.IMAGE_VARIATIONS_FIELD}`, `{config.READ_TIME_FIELD}`, `{config.USER_ID_FIELD}`) ' \
                 f'VALUES ("{product_read.asin}", "{image_variations_json}", "{product_read.read_time}", ' \
-                f'{env_var.get("USER_ID")})'
+                f'{os.environ["USER_ID"]})'
         # write query for inserting image_variations to mysql database
         return query
 

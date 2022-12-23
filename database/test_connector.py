@@ -1,7 +1,7 @@
+import os
 from datetime import datetime, timedelta
 
 from amazon_sp_api.images_api import ImageVariation
-from common import env_var
 from common.test_util import BaseTestCase
 from database import config
 from database.connector import MySQLConnector, ProductRead, ProductReadDiff
@@ -21,9 +21,9 @@ class MockMySQLConnector(MySQLConnector):
         self.drop_test_database()
 
     def set_test_environment_variables(self):
-        env_var.set('DB_HOST', 'localhost')
-        env_var.set('DB_DATABASE', 'test_database')
-        env_var.set('USER_ID', '1')
+        os.environ['DB_HOST'] =  'localhost'
+        os.environ['DB_DATABASE'] =  'test_database'
+        os.environ['USER_ID'] =  '1'
 
     def create_images_table_query(self, table_name: str) -> str:
         return f'CREATE TABLE IF NOT EXISTS {table_name} ' \
@@ -102,7 +102,7 @@ class BaseConnectorTestCase(BaseTestCase):
                 f'`{config.END_TIME_FIELD}`, `{config.END_DATE_FIELD}`, `{config.USER_ID_FIELD}`) ' \
                 f'VALUES ("{self.asin_active}", "{self.start_time}", "{self.two_days_ago_str}", ' \
                 f'"{self.end_time}", "{self.two_days_from_now_str if is_active else self.two_days_ago_str}", ' \
-                f'{env_var.get("USER_ID")});'
+                f'{os.environ["USER_ID"]});'
         self.mock_connector.run_query(query)
 
 
