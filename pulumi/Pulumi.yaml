@@ -1,6 +1,0 @@
-name: amazin-image-checker
-description: Monitoring image changes on Amazon and notifies
-runtime:
-    name: python
-    options:
-        virtualenv: venv

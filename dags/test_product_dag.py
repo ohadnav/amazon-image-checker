@@ -1,9 +1,8 @@
 from datetime import timedelta
 from unittest.mock import MagicMock
 
-from data_pipeline import product_dag
-
 from common import env_var
+from dags import product_dag
 from database.test_connector import BaseConnectorTestCase
 
 
