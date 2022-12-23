@@ -2,20 +2,10 @@ from datetime import datetime, timedelta
 from time import strptime
 from typing import Optional
 
-from airflow import DAG
-
 from amazon_sp_api.images_api import ImagesApi
 from common import env_var
-from dags import airflow_args
 from database.connector import MySQLConnector, ProductRead, ProductReadDiff
 from notify.slack_notifier import notify
-
-product_dag = DAG(
-    dag_id=airflow_args.PRODUCT_DAG_ID,
-    default_args=airflow_args.default_args,
-    schedule='@hourly',
-    tags=[airflow_args.PRODUCT_DAG_TAG],
-)
 
 
 def is_valid_image_change(current: ProductRead, last: ProductRead) -> Optional[ProductReadDiff]:
@@ -31,8 +21,7 @@ def is_valid_image_change(current: ProductRead, last: ProductRead) -> Optional[P
     return product_read_diff
 
 
-@product_dag.task(task_id=airflow_args.READ_PRODUCT_IMAGES_TASK_ID)
-def get_product_images_task():
+def product_images_task():
     connector = MySQLConnector()
     images_api = ImagesApi()
     asins_with_active_ab_test = connector.get_asins_with_active_ab_test()
@@ -60,3 +49,7 @@ def insert_new_product_read(asin: str, connector: MySQLConnector, images_api: Im
     new_product_read = ProductRead(asin, read_time, images)
     connector.insert_product_read(new_product_read)
     return new_product_read
+
+
+if __name__ == '__main__':
+    product_images_task()

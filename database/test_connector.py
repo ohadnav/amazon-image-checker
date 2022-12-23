@@ -84,7 +84,7 @@ class BaseConnectorTestCase(BaseTestCase):
         self.end_time = '23:59:59'
         self.asin_active = 'B01N4J6L3I'
         self.asin_inactive = 'B07JQZQZ4Z'
-        self.image_variations1 = [
+        self.image_variations_of_active_asin = [
             ImageVariation('MAIN', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1a.jpg', 2500, 2500),
             ImageVariation('PT01', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1b.jpg', 500, 500),
             ImageVariation('PT02', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1c.jpg', 500, 500)]
@@ -92,7 +92,7 @@ class BaseConnectorTestCase(BaseTestCase):
             ImageVariation('MAIN', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1a.jpg', 2500, 2500),
             ImageVariation('PT01', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1B.jpg', 500, 500),
             ImageVariation('PT02', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1C.jpg', 500, 500)]
-        self.product_read_today = ProductRead(self.asin_active, self.today, self.image_variations1)
+        self.product_read_today = ProductRead(self.asin_active, self.today, self.image_variations_of_active_asin)
         self.product_read_yesterday = ProductRead(self.asin_active, self.two_days_ago_date, self.image_variations2)
         self.product_read_diff = ProductReadDiff(self.product_read_today, self.product_read_yesterday)
 
