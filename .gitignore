@@ -113,3 +113,4 @@ venv/
 pulumi/venv/
 
 /credentials.json
+.idea/
