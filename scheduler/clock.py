@@ -14,10 +14,7 @@ def hourly_image_changes_task():
     image_changes_task.product_images_task()
 
 
-print(__name__)
 if __name__ == '__main__':
-    print('this code runs')
-    util.set_default_logging_format()
-    util.set_default_logging_level_to_debug()
+    util.initialize_debug_logging()
     logging.info('Starting scheduler')
     scheduler.start()

@@ -13,7 +13,7 @@ T = TypeVar('T')
 class BaseTestCase(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        util.set_default_logging_format()
+        util.set_default_logging_config()
 
     def setUp(self) -> None:
         logging.info(f'****  setUp for {self._testMethodName} of {type(self).__name__}')
