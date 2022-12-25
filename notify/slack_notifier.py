@@ -12,8 +12,8 @@ from database.connector import ProductReadDiff
 
 
 def notify(product_read_diff: ProductReadDiff):
-    logging.info(f'Notifying for asin {product_read_diff.asin}')
     message = create_message_for_changed_image(product_read_diff)
+    logging.debug(f'Notifying for asin {product_read_diff.asin}: {message}')
     send_message_to_slack(message)
 
 

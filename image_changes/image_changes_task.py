@@ -32,7 +32,7 @@ def product_images_task():
 
 
 def process_asin(asin: str, connector: MySQLConnector, images_api: ImagesApi):
-    logging.info('Processing asin {}'.format(asin))
+    logging.debug('Processing asin {}'.format(asin))
     last_product_read = connector.get_last_product_read(asin)
     new_product_read = insert_new_product_read(asin, connector, images_api)
     if last_product_read:
