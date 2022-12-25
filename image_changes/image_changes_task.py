@@ -57,5 +57,5 @@ def insert_new_product_read(asin: str, connector: MySQLConnector, images_api: Im
 
 
 if __name__ == '__main__':
-    print('Starting image changes task')
+    logging.info('Starting image changes task')
     product_images_task()
