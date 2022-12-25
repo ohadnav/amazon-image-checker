@@ -2,6 +2,7 @@
 calculate whether the last image url from the database is different from the current image url
 '''
 import json
+import logging
 import os
 import sys
 
@@ -11,6 +12,7 @@ from database.connector import ProductReadDiff
 
 
 def notify(product_read_diff: ProductReadDiff):
+    logging.info(f'Notifying for asin {product_read_diff.asin}')
     message = create_message_for_changed_image(product_read_diff)
     send_message_to_slack(message)
 

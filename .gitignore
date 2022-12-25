@@ -114,3 +114,4 @@ pulumi/venv/
 
 /credentials.json
 .idea/
+.pytest_cache/*

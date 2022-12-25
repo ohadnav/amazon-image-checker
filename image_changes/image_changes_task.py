@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime, timedelta
 from time import strptime
@@ -22,6 +23,7 @@ def is_valid_image_change(current: ProductRead, last: ProductRead) -> Optional[P
 
 
 def product_images_task():
+    logging.info('Running product images task')
     connector = MySQLConnector()
     images_api = ImagesApi()
     asins_with_active_ab_test = connector.get_asins_with_active_ab_test()
@@ -30,15 +32,18 @@ def product_images_task():
 
 
 def process_asin(asin: str, connector: MySQLConnector, images_api: ImagesApi):
+    logging.info('Processing asin {}'.format(asin))
     last_product_read = connector.get_last_product_read(asin)
     new_product_read = insert_new_product_read(asin, connector, images_api)
     if last_product_read:
         product_read_diff = is_valid_image_change(new_product_read, last_product_read)
+        images_changed = set([image_variation.variant for image_variation in product_read_diff.image_variations])
         if product_read_diff:
             apply_product_images_changed(product_read_diff, connector)
 
 
 def apply_product_images_changed(product_read_diff: ProductReadDiff, connector: MySQLConnector):
+    logging.info(f'Found image change for asin {asin} in images {", ".join(images_changed)}')
     connector.insert_images_changes(product_read_diff)
     notify(product_read_diff)
 

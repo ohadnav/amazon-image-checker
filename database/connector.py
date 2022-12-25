@@ -67,7 +67,7 @@ class MySQLConnector:
             else:
                 self.connect_without_db()
             self.cursor.execute(query)
-            logging.info(f'query: {query}')
+            logging.info(f'running query: {query}')
             self.connection.commit()
             if self.cursor.rowcount:
                 results = self.cursor.fetchall()
@@ -77,6 +77,7 @@ class MySQLConnector:
         finally:
             if self.connection.is_connected():
                 self.close_connection()
+            logging.info(f'got results for {query}')
             return results
 
     def close_connection(self):
