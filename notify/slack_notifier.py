@@ -31,4 +31,4 @@ def send_message_to_slack(message: str):
     headers = {'Content-Type': "application/json", 'Content-Length': byte_length}
     response = requests.post(webhook_url, data=json.dumps(slack_data), headers=headers)
     if response.status_code != 200:
-        print(f'{response.status_code} - {response.text}')
+        logging.error(f'{response.status_code} - {response.text}')
