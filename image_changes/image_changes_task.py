@@ -5,6 +5,7 @@ from time import strptime
 from typing import Optional
 
 from amazon_sp_api.images_api import ImagesApi
+from common import util
 from database.connector import MySQLConnector, ProductRead, ProductReadDiff
 from notify.slack_notifier import notify
 
@@ -57,5 +58,6 @@ def insert_new_product_read(asin: str, connector: MySQLConnector, images_api: Im
 
 
 if __name__ == '__main__':
+    util.initialize_debug_logging()
     logging.info('Starting image changes task')
     product_images_task()
