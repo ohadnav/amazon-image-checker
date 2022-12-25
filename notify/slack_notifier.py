@@ -8,6 +8,8 @@ import sys
 
 import requests
 
+from amazon_sp_api import amazon_util
+from amazon_sp_api.amazon_util import AmazonUtil
 from database.connector import ProductReadDiff
 
 
@@ -18,7 +20,7 @@ def notify(product_read_diff: ProductReadDiff):
 
 
 def create_message_for_changed_image(product_read_diff: ProductReadDiff) -> str:
-    asin_url = f'https://www.amazon.com/dp/{product_read_diff.asin}'
+    asin_url = AmazonUtil.get_url_from_asin(product_read_diff.asin)
     variations_with_diff = set([image_variation.variant for image_variation in product_read_diff.image_variations])
     change_message = f'Image of {asin_url} has changed in variations {", ".join(variations_with_diff)}'
     return change_message
