@@ -77,7 +77,7 @@ class MySQLConnector:
         finally:
             if self.connection.is_connected():
                 self.close_connection()
-            logging.debug(f'got results for {query}: {results}')
+            logging.debug(f'got results {results} for {query}')
             return results
 
     def close_connection(self):
