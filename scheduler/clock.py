@@ -10,6 +10,7 @@ scheduler = BlockingScheduler()
 
 @scheduler.scheduled_job('interval', hours=1)
 def hourly_image_changes_task():
+    util.initialize_debug_logging()
     logging.debug('Running hourly image changes task time is {}'.format(datetime.now()))
     image_changes_task.product_images_task()
 
