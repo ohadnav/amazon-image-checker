@@ -151,6 +151,8 @@ class MySQLConnector:
         self.run_query(self._insert_product_read_query(product_read, table_name))
 
     def insert_images_changes(self, product_read_diff: ProductReadDiff):
+        if not product_read_diff.image_variations:
+            logging.warning(f'empty changes for {product_read_diff.asin}')
         self.insert_product_read(product_read_diff, config.IMAGES_CHANGES_TABLE)
 
     def get_last_images_changes(self, asin: str) -> ProductReadDiff | None:

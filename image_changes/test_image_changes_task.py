@@ -1,4 +1,5 @@
 import os
+from dataclasses import replace
 from datetime import timedelta
 from unittest.mock import MagicMock
 
@@ -12,7 +13,11 @@ class TestImageChangesTask(BaseConnectorTestCase):
         self.product_read_yesterday.read_time = self.product_read_today.read_time - timedelta(hours=2 * max_hours)
         self.assertIsNone(
             image_changes_task.is_valid_image_change(self.product_read_today, self.product_read_yesterday))
-        self.product_read_yesterday.read_time = self.product_read_today.read_time - timedelta(hours=0.5 * max_hours)
+        half_max_hours = self.product_read_today.read_time - timedelta(hours=0.5 * max_hours)
+        product_read_no_diff_last_hour = replace(self.product_read_today, read_time=half_max_hours)
+        self.assertIsNone(
+            image_changes_task.is_valid_image_change(self.product_read_today, product_read_no_diff_last_hour))
+        self.product_read_yesterday.read_time = half_max_hours
         self.assertDeepAlmostEqual(
             self.product_read_diff,
             image_changes_task.is_valid_image_change(self.product_read_today, self.product_read_yesterday))

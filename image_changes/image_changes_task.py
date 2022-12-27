@@ -18,7 +18,7 @@ def is_valid_image_change(current: ProductRead, last: ProductRead) -> Optional[P
     # diff between current and last read time
     diff = current.read_time - last.read_time
     # if diff is greater than max diff
-    if diff > max_delta:
+    if diff > max_delta or not product_read_diff.image_variations:
         return None
     return product_read_diff
 
