@@ -1,9 +1,11 @@
 import logging
+import time
 from dataclasses import dataclass, asdict
 from typing import List
 
 from dacite import from_dict
 from sp_api.api import CatalogItems
+from sp_api.base import SellingApiRequestThrottledException
 
 
 @dataclass
@@ -21,7 +23,7 @@ class ImageVariation:
 
 
 class ImagesApi():
-    def get_images(self, asin: str) -> List[ImageVariation]:
+    def get_images(self, asin: str, retries=0) -> List[ImageVariation]:
         try:
             catalog = CatalogItems()
             logging.debug(f'Getting images for asin: {asin}')
@@ -35,6 +37,14 @@ class ImagesApi():
             unique_image_variations = set([image_variation.variant for image_variation in image_variations])
             logging.debug(f'Got {unique_image_variations} images for asin: {asin}')
             return image_variations
+        except SellingApiRequestThrottledException as e:
+            if retries < 10:
+                logging.info(f'Got throttled, retrying in a minute. Retries: {retries}')
+                time.sleep(60)
+                return self.get_images(asin, retries + 1)
+            else:
+                logging.warning(f'Max retires for throttling reached. Asin: {asin}')
+                raise e
         except Exception as e:
             logging.error(f'Error getting images for asin {asin}: {e}')
             raise e
