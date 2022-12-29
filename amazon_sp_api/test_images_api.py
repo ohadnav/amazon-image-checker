@@ -41,3 +41,7 @@ class TestImagesApi(BaseTestCase):
     def test_get_images(self):
         images = self.images_api.get_images(TEST_ASIN)
         self.assertEqual(set(images), set(EXPECTED_IMAGE_VARIATION))
+
+    def test_high_volume_get_images(self):
+        for _ in range(100):
+            self.test_get_images()
