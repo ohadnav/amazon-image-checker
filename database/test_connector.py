@@ -21,9 +21,9 @@ class MockMySQLConnector(MySQLConnector):
         self.drop_test_database()
 
     def set_test_environment_variables(self):
-        os.environ['DB_HOST'] =  'localhost'
-        os.environ['DB_DATABASE'] =  'test_database'
-        os.environ['USER_ID'] =  '1'
+        os.environ['DB_HOST'] = 'localhost'
+        os.environ['DB_DATABASE'] = 'test_database'
+        os.environ['USER_ID'] = '1'
 
     def create_images_table_query(self, table_name: str) -> str:
         return f'CREATE TABLE IF NOT EXISTS {table_name} ' \

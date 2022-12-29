@@ -1,5 +1,4 @@
 import logging
-import sys
 from typing import TypeVar
 from unittest import TestCase
 
@@ -18,6 +17,7 @@ class BaseTestCase(TestCase):
     def setUp(self) -> None:
         logging.info(f'****  setUp for {self._testMethodName} of {type(self).__name__}')
 
+    # noinspection PyUnresolvedReferences
     def assertDeepAlmostEqual(self, expected: T, actual: T, *args, **kwargs):
         """
         Assert that two complex structures have almost equal contents.

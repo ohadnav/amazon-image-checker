@@ -8,6 +8,7 @@ from image_changes import image_changes_task
 
 scheduler = BlockingScheduler()
 
+
 @scheduler.scheduled_job('interval', hours=1)
 def hourly_image_changes_task():
     util.initialize_debug_logging()
