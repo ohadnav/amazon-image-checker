@@ -1,4 +1,6 @@
-from amazon_sp_api.images_api import ImagesApi, ImageVariation
+import os
+
+from amazon_sp_api.amazon_api import AmazonApi, ImageVariation
 from common.test_util import BaseTestCase
 
 TEST_ASIN = 'B07Z95MG3S'
@@ -32,12 +34,18 @@ EXPECTED_IMAGE_VARIATION = [
     ImageVariation(
         variant='PT06', link='https://m.media-amazon.com/images/I/51ModeeSUYL._SL75_.jpg', height=75, width=75)
 ]
+TEST_FEED_FILE = f'{os.path.dirname(os.path.realpath(__file__))}/test_data/TF-WT-TV-P_4P-6.xlsm'
 
 
-class TestImagesApi(BaseTestCase):
+class TestAmazonApi(BaseTestCase):
     def setUp(self) -> None:
-        self.images_api = ImagesApi()
+        self.amazon_api = AmazonApi()
 
     def test_get_images(self):
-        images = self.images_api.get_images(TEST_ASIN)
+        images = self.amazon_api.get_images(TEST_ASIN)
         self.assertEqual(set(images), set(EXPECTED_IMAGE_VARIATION))
+
+    def test_submit_feed(self):
+        response = self.amazon_api.post_feed(TEST_FEED_FILE)
+        self.assertTrue(str.isnumeric(response[1].payload['feedId']))
+        self.assertTrue(response[0].payload['feedDocumentId'].startswith('amzn1.tortuga'))

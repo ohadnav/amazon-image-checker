@@ -10,7 +10,7 @@ from typing import Any, List
 import mysql.connector
 from mysql.connector import errorcode
 
-from amazon_sp_api.images_api import ImageVariation
+from amazon_sp_api.amazon_api import ImageVariation
 from database import config
 
 

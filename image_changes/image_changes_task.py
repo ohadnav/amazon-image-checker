@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from time import strptime
 from typing import Optional
 
-from amazon_sp_api.images_api import ImagesApi
+from amazon_sp_api.amazon_api import AmazonApi
 from common import util
 from database.connector import MySQLConnector, ProductRead, ProductReadDiff
 from notify.slack_notifier import notify
@@ -26,13 +26,13 @@ def is_valid_image_change(current: ProductRead, last: ProductRead) -> Optional[P
 def product_images_task():
     logging.info('Running product images task')
     connector = MySQLConnector()
-    images_api = ImagesApi()
+    images_api = AmazonApi()
     asins_with_active_ab_test = connector.get_asins_with_active_ab_test()
     for asin in asins_with_active_ab_test:
         process_asin(asin, connector, images_api)
 
 
-def process_asin(asin: str, connector: MySQLConnector, images_api: ImagesApi):
+def process_asin(asin: str, connector: MySQLConnector, images_api: AmazonApi):
     logging.debug('Processing asin {}'.format(asin))
     last_product_read = connector.get_last_product_read(asin)
     new_product_read = insert_new_product_read(asin, connector, images_api)
@@ -49,7 +49,7 @@ def apply_product_images_changed(product_read_diff: ProductReadDiff, connector: 
     notify(product_read_diff)
 
 
-def insert_new_product_read(asin: str, connector: MySQLConnector, images_api: ImagesApi) -> ProductRead:
+def insert_new_product_read(asin: str, connector: MySQLConnector, images_api: AmazonApi) -> ProductRead:
     read_time = datetime.now()
     images = images_api.get_images(asin)
     new_product_read = ProductRead(asin, read_time, images)

@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 
-from amazon_sp_api.images_api import ImageVariation
+from amazon_sp_api.amazon_api import ImageVariation
 from common.test_util import BaseTestCase
 from database import config
 from database.connector import MySQLConnector, ProductRead, ProductReadDiff
