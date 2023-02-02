@@ -1,19 +1,23 @@
 import logging
-from datetime import datetime
+import os
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from common import util
-from image_changes import image_changes_task
+from scheduler.ab_test_task import ABTestTask
+from scheduler.image_changes_task import ImageChangesTask
 
 scheduler = BlockingScheduler()
 
 
-@scheduler.scheduled_job('interval', hours=1)
+@scheduler.scheduled_job('interval', hours=os.environ['SCHEDULER_INTERVAL_HOURS'])
 def hourly_image_changes_task():
-    util.initialize_debug_logging()
-    logging.debug('Running hourly image changes task time is {}'.format(datetime.now()))
-    image_changes_task.product_images_task()
+    ImageChangesTask().run()
+
+
+@scheduler.scheduled_job('interval', hours=os.environ['SCHEDULER_INTERVAL_HOURS'])
+def hourly_ab_test_task():
+    ABTestTask().run()
 
 
 if __name__ == '__main__':

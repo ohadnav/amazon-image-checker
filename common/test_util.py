@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import TypeVar
 from unittest import TestCase
 
@@ -7,12 +8,14 @@ import numpy
 from common import util
 
 T = TypeVar('T')
+TEST_FLATFILE_A = f'{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/test_data/TF-WT-TV-P_4P-6 A.xlsm'
+TEST_FLATFILE_B = f'{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/test_data/TF-WT-TV-P_4P-6 B.xlsm'
 
 
 class BaseTestCase(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        util.set_default_logging_config()
+        util.initialize_debug_logging()
 
     def setUp(self) -> None:
         logging.info(f'****  setUp for {self._testMethodName} of {type(self).__name__}')

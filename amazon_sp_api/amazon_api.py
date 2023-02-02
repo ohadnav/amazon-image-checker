@@ -39,8 +39,8 @@ class AmazonApi():
         return image_variations
 
     @throttle_retry()
-    def post_feed(self, feed_filename: str):
+    def post_feed(self, feed_filename: str) -> int:
         response = Feeds().submit_feed(
             FeedType.POST_FLAT_FILE_LISTINGS_DATA, FileIO(feed_filename),
             content_type='application/vnd.ms-excel.sheet.macroEnabled.12')
-        return response
+        return response[1].payload['feedId']
