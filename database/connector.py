@@ -47,9 +47,11 @@ class ProductReadDiff(ProductRead):
             assert current.asin == last.asin and current.read_time > last.read_time
         self.asin = current.asin
         self.read_time = current.read_time
-        self.image_variations = self._calculate_variants_with_diff(current, last) if last else current.image_variations
+        self.image_variations = ProductReadDiff._calculate_variants_with_diff(
+            current, last) if last else current.image_variations
 
-    def _calculate_variants_with_diff(self, current: ProductRead, last: ProductRead) -> List[ImageVariation]:
+    @staticmethod
+    def _calculate_variants_with_diff(current: ProductRead, last: ProductRead) -> List[ImageVariation]:
         return [variant for variant in current.image_variations if variant not in last.image_variations]
 
 

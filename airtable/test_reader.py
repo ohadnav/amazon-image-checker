@@ -11,6 +11,7 @@ from common import test_util
 from common.test_util import BaseTestCase
 
 ACTIVE_TEST_ID = 1
+TEST_ASIN = 'B08LKMP5QX'
 
 
 @freeze_time(datetime.strptime('2023-01-16 00:01', config.PYTHON_TIME_FORMAT).astimezone(timezone(config.TIMEZONE)))
@@ -59,4 +60,4 @@ class BaseAirtableReaderTestCase(BaseTestCase):
     def test_get_asins_with_active_ab_test(self):
         AirtableReader.current_variation = MagicMock(return_value='A')
         self.assertListEqual(
-            self.airtable_reader.get_asins_of_active_ab_test(), ['B08LKMP5QX'])
+            self.airtable_reader.get_asins_of_active_ab_test(), [TEST_ASIN])
