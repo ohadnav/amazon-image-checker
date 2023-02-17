@@ -208,12 +208,12 @@ class MySQLConnector:
             return last_ab_test_run
         return None
 
-    def _update_feed_id_query(self, ab_test_record: ABTestRecord, feed_id: int) -> SQLQuery:
+    def _update_feed_id_query(self, ab_test_run: ABTestRun) -> SQLQuery:
         query = f'UPDATE {config.AB_TEST_RUNS_TABLE} ' \
-                f'SET {config.FEED_ID_FIELD} = "{feed_id}" ' \
-                f'WHERE {config.AB_TEST_ID_FIELD} = "{ab_test_record.fields[airtable.config.TEST_ID_FIELD]}" ' \
+                f'SET {config.FEED_ID_FIELD} = "{ab_test_run.feed_id}" ' \
+                f'WHERE {config.AB_TEST_ID_FIELD} = "{ab_test_run.test_id}" ' \
                 f'ORDER BY {config.RUN_ID_FIELD} DESC LIMIT 1'
         return query
 
-    def update_feed_id(self, ab_test_record: ABTestRecord, feed_id: int):
-        self.run_query(self._update_feed_id_query(ab_test_record, feed_id))
+    def update_feed_id(self, ab_test_run: ABTestRun):
+        self.run_query(self._update_feed_id_query(ab_test_run))

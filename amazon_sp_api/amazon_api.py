@@ -1,6 +1,9 @@
 import logging
+import os
+import time
+import urllib.request
 from dataclasses import dataclass, asdict
-from io import FileIO
+from io import FileIO, BytesIO
 from typing import List
 
 from dacite import from_dict
@@ -39,11 +42,32 @@ class AmazonApi():
         return image_variations
 
     @throttle_retry()
-    def post_feed(self, feed_filename: str) -> int:
-        logging.debug(f'Posting feed: {feed_filename}')
-        response = Feeds().submit_feed(
-            FeedType.POST_FLAT_FILE_LISTINGS_DATA, FileIO(feed_filename),
-            content_type='application/vnd.ms-excel.sheet.macroEnabled.12')
-        payload_feed_id = response[1].payload['feedId']
+    def post_feed(self, feed_url: str) -> int:
+        logging.debug(f'Posting feed: {feed_url}')
+        temp_file_path = self.read_xlsm_url_into_temp_file(feed_url)
+        try:
+            response = Feeds().submit_feed(
+                FeedType.POST_FLAT_FILE_LISTINGS_DATA, FileIO(temp_file_path),
+                content_type='application/vnd.ms-excel.sheet.macroEnabled.12')
+        except Exception as e:
+            os.remove(temp_file_path)
+            raise e
+        finally:
+            os.remove(temp_file_path)
+        payload_feed_id = int(response[1].payload['feedId'])
         logging.debug(f'Got feed_id: {payload_feed_id}')
         return payload_feed_id
+
+    @staticmethod
+    def read_xlsm_url_into_temp_file(feed_url: str) -> str:
+        if feed_url.startswith('http'):
+            with urllib.request.urlopen(feed_url) as url_response:
+                url_content = url_response.read()
+            bytes_io = BytesIO(url_content)
+        else:
+            with open(feed_url, "rb") as local_file:
+                bytes_io = BytesIO(local_file.read())
+        temp_file_path = f'{int(time.time())}.xlsm'
+        with open(temp_file_path, 'wb') as temp_file:
+            temp_file.write(bytes_io.read())
+        return temp_file_path

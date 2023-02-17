@@ -43,7 +43,7 @@ class LocalMySQLConnector(MySQLConnector):
                f'(`{config.RUN_ID_FIELD}` int NOT NULL AUTO_INCREMENT, ' \
                f'`{config.AB_TEST_ID_FIELD}` INT NOT NULL, ' \
                f'`{config.RUN_TIME_FIELD}` DATETIME NOT NULL, ' \
-               f'`{config.FEED_ID_FIELD}` INT, ' \
+               f'`{config.FEED_ID_FIELD}` BIGINT, ' \
                f'`{config.VARIATION_FIELD}` VARCHAR(10), ' \
                f'`{config.USER_ID_FIELD}` INT NOT NULL, ' \
                f'PRIMARY KEY (run_id))'
@@ -127,6 +127,14 @@ class BaseConnectorTestCase(BaseTestCase):
         self.ab_test_run2b = ABTestRun(
             self.ab_test_record2.fields[airtable.config.TEST_ID_FIELD], self.yesterday, 'B', 4, 4)
 
+    def get_feed_id_by_run_id(self, run_id: int) -> int | None:
+        query = f'SELECT {config.FEED_ID_FIELD} FROM {config.AB_TEST_RUNS_TABLE} ' \
+                f'WHERE {config.RUN_ID_FIELD} = "{run_id}"'
+        result = self.local_connector.run_query(query)
+        if result:
+            return result[0][config.FEED_ID_FIELD]
+        return None
+
 
 class TestMySQLConnector(BaseConnectorTestCase):
     def test_get_last_product_read_empty_table(self):
@@ -143,23 +151,15 @@ class TestMySQLConnector(BaseConnectorTestCase):
         self.local_connector.insert_images_changes(self.product_read_diff)
         self.assertEqual(self.product_read_diff, self.local_connector.get_last_images_changes(self.asin_active))
 
-    def get_feed_id_by_run_id(self, run_id: int) -> int | None:
-        query = f'SELECT {config.FEED_ID_FIELD} FROM {config.AB_TEST_RUNS_TABLE} ' \
-                f'WHERE {config.RUN_ID_FIELD} = "{run_id}"'
-        result = self.local_connector.run_query(query)
-        if result:
-            return result[0][config.FEED_ID_FIELD]
-        return None
-
     def test_update_feed_id(self):
         self.local_connector.insert_ab_test_run(self.ab_test_run1a)
         self.assertIsNone(self.local_connector.get_last_run_for_ab_test(self.ab_test_record1).feed_id)
-        self.local_connector.update_feed_id(self.ab_test_record1, self.ab_test_run1a.feed_id)
+        self.local_connector.update_feed_id(self.ab_test_run1a)
         self.assertEqual(self.get_feed_id_by_run_id(self.ab_test_run1a.run_id), self.ab_test_run1a.feed_id)
         self.local_connector.insert_ab_test_run(self.ab_test_run1b)
         self.local_connector.insert_ab_test_run(self.ab_test_run2a)
         self.assertIsNone(self.local_connector.get_last_run_for_ab_test(self.ab_test_record1).feed_id)
-        self.local_connector.update_feed_id(self.ab_test_record1, self.ab_test_run1b.feed_id)
+        self.local_connector.update_feed_id(self.ab_test_run1b)
         self.assertEqual(self.get_feed_id_by_run_id(self.ab_test_run1b.run_id), self.ab_test_run1b.feed_id)
         self.assertEqual(self.get_feed_id_by_run_id(self.ab_test_run1a.run_id), self.ab_test_run1a.feed_id)
         self.assertIsNone(self.local_connector.get_last_run_for_ab_test(self.ab_test_record2).feed_id)

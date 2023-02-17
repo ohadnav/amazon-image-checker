@@ -19,4 +19,4 @@ class TestAmazonApi(BaseTestCase):
         self.assertTrue(images[0].link.startswith('https://m.media-amazon.com/images/I/'))
 
     def test_submit_feed(self):
-        self.assertTrue(self.amazon_api.post_feed(test_util.TEST_FLATFILE_A))
+        self.assertIsInstance(self.amazon_api.post_feed(test_util.TEST_FLATFILE_A), int)
