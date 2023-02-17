@@ -7,6 +7,8 @@ class ABTestTask(BaseTask):
     def should_run_ab_test(self, ab_test_record: ABTestRecord) -> bool:
         last_ab_test_run = self.connector.get_last_run_for_ab_test(ab_test_record)
         current_variation = AirtableReader.current_variation(ab_test_record)
+        if not last_ab_test_run and current_variation == 'B':
+            return True
         return last_ab_test_run and last_ab_test_run.variation != current_variation
 
     def task(self):

@@ -18,10 +18,16 @@ class ABTestTaskTestCase(BaseConnectorTestCase):
     @patch('airtable.reader.AirtableReader.current_variation', autospec=True)
     def test_should_not_run_ab_test(self, current_variation_mock):
         self.ab_test_task.connector.get_last_run_for_ab_test = MagicMock(return_value=None)
-        current_variation_mock.return_value = self.ab_test_run1a.variation
+        current_variation_mock.return_value = 'A'
         self.assertFalse(self.ab_test_task.should_run_ab_test(self.ab_test_record1))
+
+        current_variation_mock.return_value = 'B'
+        self.assertTrue(self.ab_test_task.should_run_ab_test(self.ab_test_record1))
+
+        current_variation_mock.return_value = 'A'
         self.ab_test_task.connector.get_last_run_for_ab_test.return_value = self.ab_test_run1a
         self.assertFalse(self.ab_test_task.should_run_ab_test(self.ab_test_record1))
+
         current_variation_mock.return_value = self.ab_test_run1b.variation
         self.assertTrue(self.ab_test_task.should_run_ab_test(self.ab_test_record1))
 
