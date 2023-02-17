@@ -10,13 +10,13 @@ from scheduler.image_changes_task import ImageChangesTask
 scheduler = BlockingScheduler()
 
 
-@scheduler.scheduled_job('interval', hours=int(os.environ['SCHEDULER_INTERVAL_HOURS']))
-def hourly_image_changes_task():
+@scheduler.scheduled_job('interval', hours=int(os.environ['SCHEDULER_INTERVAL_HOURS']), minutes=7)
+def image_changes_task_scheduler():
     ImageChangesTask().run()
 
 
 @scheduler.scheduled_job('interval', hours=int(os.environ['SCHEDULER_INTERVAL_HOURS']))
-def hourly_ab_test_task():
+def ab_test_task_scheduler():
     ABTestTask().run()
 
 
