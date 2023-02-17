@@ -165,7 +165,8 @@ class TestMySQLConnector(BaseConnectorTestCase):
         self.assertIsNone(self.local_connector.get_last_run_for_ab_test(self.ab_test_record2).feed_id)
 
     def test_get_last_run_for_ab_test(self):
-        self.local_connector.insert_ab_test_run(self.ab_test_run1a)
+        inserted_ab_test_run = self.local_connector.insert_ab_test_run(self.ab_test_run1a)
+        self.assertEqual(self.ab_test_run1a.run_id, inserted_ab_test_run.run_id)
         self.ab_test_run1a.feed_id = None
         self.assertEqual(self.local_connector.get_last_run_for_ab_test(self.ab_test_record1), self.ab_test_run1a)
         self.local_connector.insert_ab_test_run(self.ab_test_run1b)

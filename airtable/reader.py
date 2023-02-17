@@ -1,3 +1,4 @@
+import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime
@@ -24,9 +25,14 @@ class AirtableReader():
         return self._get_raw_record_fields(record)[config.TEST_ID_FIELD]
 
     def get_active_ab_test_records(self) -> Mapping[ABTestId, ABTestRecord]:
-        active_ab_tests = self.table.all(formula=AirtableReader._active_ab_test_formula())
+        active_ab_test_formula = AirtableReader._active_ab_test_formula()
+        logging.debug(f'Getting active AB tests from Airtable with formula: {active_ab_test_formula}')
+        active_ab_tests = self.table.all(formula=active_ab_test_formula)
         test_id_to_records = {self._get_raw_record_id(raw_record): ABTestRecord(self._get_raw_record_fields(raw_record))
             for raw_record in active_ab_tests}
+        logging.debug(
+            f'Found {len(test_id_to_records)} active AB tests with IDs: '
+            f'{", ".join([str(test_id) for test_id in test_id_to_records.keys()])}')
         return test_id_to_records
 
     @staticmethod

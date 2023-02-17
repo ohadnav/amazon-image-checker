@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -171,8 +172,18 @@ class MySQLConnector:
                 f'{os.environ["USER_ID"]})'
         return query
 
-    def insert_ab_test_run(self, ab_test_run: ABTestRun):
+    def _get_inserted_ab_test_run_id_query(self, ab_test_run: ABTestRun) -> SQLQuery:
+        query = f'SELECT `{config.RUN_ID_FIELD}` FROM `{config.AB_TEST_RUNS_TABLE}` ' \
+                f'WHERE {config.AB_TEST_ID_FIELD} = "{ab_test_run.test_id}" ' \
+                f'ORDER BY {config.RUN_ID_FIELD} DESC LIMIT 1 '
+        return query
+
+    def insert_ab_test_run(self, ab_test_run: ABTestRun) -> ABTestRun:
         self.run_query(self._insert_ab_test_run_query(ab_test_run))
+        inserted_run_id = self.run_query(self._get_inserted_ab_test_run_id_query(ab_test_run))[0][config.RUN_ID_FIELD]
+        inserted_ab_test_run = copy.deepcopy(ab_test_run)
+        inserted_ab_test_run.run_id = inserted_run_id
+        return inserted_ab_test_run
 
     def _last_run_for_ab_test_query(self, ab_test_record: ABTestRecord) -> SQLQuery:
         query = f'SELECT {config.AB_TEST_ID_FIELD}, {config.AB_TEST_ID_FIELD}, {config.RUN_TIME_FIELD},' \

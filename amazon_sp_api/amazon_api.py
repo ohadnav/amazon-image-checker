@@ -40,7 +40,10 @@ class AmazonApi():
 
     @throttle_retry()
     def post_feed(self, feed_filename: str) -> int:
+        logging.debug(f'Posting feed: {feed_filename}')
         response = Feeds().submit_feed(
             FeedType.POST_FLAT_FILE_LISTINGS_DATA, FileIO(feed_filename),
             content_type='application/vnd.ms-excel.sheet.macroEnabled.12')
-        return response[1].payload['feedId']
+        payload_feed_id = response[1].payload['feedId']
+        logging.debug(f'Got feed_id: {payload_feed_id}')
+        return payload_feed_id
