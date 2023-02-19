@@ -6,7 +6,7 @@ import logging
 import os
 from dataclasses import dataclass, asdict
 from datetime import datetime
-from typing import Any, List
+from typing import Any, List, Optional
 
 import mysql.connector
 from mysql.connector import errorcode
@@ -24,6 +24,7 @@ class ProductRead:
     asin: str
     read_time: datetime
     image_variations: List[ImageVariation]
+    listing_price: Optional[float]
 
 
 @dataclass
@@ -50,10 +51,15 @@ class ProductReadDiff(ProductRead):
         self.read_time = current.read_time
         self.image_variations = ProductReadDiff._calculate_variants_with_diff(
             current, last) if last else current.image_variations
+        self.listing_price = current.listing_price if not last or current.listing_price != \
+                                                      last.listing_price else None
 
     @staticmethod
     def _calculate_variants_with_diff(current: ProductRead, last: ProductRead) -> List[ImageVariation]:
         return [variant for variant in current.image_variations if variant not in last.image_variations]
+
+    def has_diff(self) -> bool:
+        return bool(self.image_variations) or bool(self.listing_price)
 
 
 class MySQLConnector:
@@ -94,7 +100,7 @@ class MySQLConnector:
             if self.cursor.rowcount:
                 results = self.cursor.fetchall()
         except mysql.connector.Error as error:
-            self.handle_error(error, query)
+            MySQLConnector.handle_error(error, query)
             raise error
         finally:
             if self.connection.is_connected():
@@ -106,7 +112,8 @@ class MySQLConnector:
         self.cursor.close()
         self.connection.close()
 
-    def handle_error(self, error, query):
+    @staticmethod
+    def handle_error(error, query):
         logging.error(f'Failed to execute query: {query} with error: {error}')
         if error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
             logging.error("Something is wrong with your user name or password")
@@ -114,14 +121,15 @@ class MySQLConnector:
             logging.error(f'Database error: {error}')
 
     def _last_product_read_query(self, asin: str, table_name: str) -> SQLQuery:
-        query = f'SELECT {config.IMAGE_VARIATIONS_FIELD}, {config.ASIN_FIELD}, {config.READ_TIME_FIELD} ' \
+        query = f'SELECT {config.IMAGE_VARIATIONS_FIELD}, {config.ASIN_FIELD}, {config.READ_TIME_FIELD}, ' \
+                f'{config.LISTING_PRICE_FIELD} ' \
                 f'FROM {table_name} ' \
                 f'WHERE {config.ASIN_FIELD}  = "{asin}" AND {config.USER_ID_FIELD} = {os.environ["USER_ID"]} ' \
                 f'ORDER BY {config.READ_TIME_FIELD} DESC LIMIT 1'
         return query
 
     def get_last_product_read(self, asin: str, table_name: str = None) -> ProductRead | None:
-        table_name = table_name if table_name else config.IMAGES_HISTORY_TABLE
+        table_name = table_name if table_name else config.PRODUCT_READ_HISTORY_TABLE
         results = self.run_query(self._last_product_read_query(asin, table_name))
         if results:
             last_product_read = self._parse_query_result_row_to_product_read(results[0])
@@ -133,33 +141,32 @@ class MySQLConnector:
         image_variations_list = [ImageVariation(**image_variation) for image_variation in image_variations]
         product_read = ProductRead(
             asin=result_row[config.ASIN_FIELD], read_time=result_row[config.READ_TIME_FIELD],
-            image_variations=image_variations_list)
+            image_variations=image_variations_list, listing_price=result_row[config.LISTING_PRICE_FIELD])
         return product_read
 
     def _insert_product_read_query(self, product_read: ProductRead, table_name: str):
         # convert image_variations from list to str matching the format in the database
         image_variations_json = self._prepare_json_to_sql_insert_query(product_read)
-        query = f'INSERT INTO `{table_name}` (`{config.ASIN_FIELD}`, ' \
-                f'`{config.IMAGE_VARIATIONS_FIELD}`, `{config.READ_TIME_FIELD}`, `{config.USER_ID_FIELD}`) ' \
+        query = f'INSERT INTO `{table_name}` ' \
+                f'(`{config.ASIN_FIELD}`, `{config.IMAGE_VARIATIONS_FIELD}`, `{config.READ_TIME_FIELD}`, ' \
+                f'`{config.LISTING_PRICE_FIELD}`, `{config.USER_ID_FIELD}`) ' \
                 f'VALUES ("{product_read.asin}", "{image_variations_json}", "{product_read.read_time}", ' \
-                f'{os.environ["USER_ID"]})'
-        # write query for inserting image_variations to mysql database
+                f'{product_read.listing_price}, {os.environ["USER_ID"]})'
         return query
 
     def _prepare_json_to_sql_insert_query(self, product_read: ProductRead) -> SQLQuery:
         return str(asdict(product_read)['image_variations']).replace("'", '\\"')
 
     def insert_product_read(self, product_read: ProductRead, table_name: str = None):
-        table_name = table_name or config.IMAGES_HISTORY_TABLE
+        table_name = table_name or config.PRODUCT_READ_HISTORY_TABLE
         self.run_query(self._insert_product_read_query(product_read, table_name))
 
-    def insert_images_changes(self, product_read_diff: ProductReadDiff):
-        if not product_read_diff.image_variations:
-            logging.warning(f'empty changes for {product_read_diff.asin}')
-        self.insert_product_read(product_read_diff, config.IMAGES_CHANGES_TABLE)
+    def insert_product_read_changes(self, product_read_diff: ProductReadDiff):
+        assert product_read_diff.has_diff()
+        self.insert_product_read(product_read_diff, config.PRODUCT_READ_CHANGES_TABLE)
 
-    def get_last_images_changes(self, asin: str) -> ProductReadDiff | None:
-        product_read_maybe = self.get_last_product_read(asin, config.IMAGES_CHANGES_TABLE)
+    def get_last_product_read_changes(self, asin: str) -> ProductReadDiff | None:
+        product_read_maybe = self.get_last_product_read(asin, config.PRODUCT_READ_CHANGES_TABLE)
         if product_read_maybe:
             return ProductReadDiff(product_read_maybe)
         return None

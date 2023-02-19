@@ -1,8 +1,9 @@
-IMAGES_HISTORY_TABLE = 'product_images_history'
-IMAGES_CHANGES_TABLE = 'images_changes'
+PRODUCT_READ_HISTORY_TABLE = 'product_read_history'
+PRODUCT_READ_CHANGES_TABLE = 'product_read_changes'
 ASIN_FIELD = 'asin'
 IMAGE_VARIATIONS_FIELD = 'image_variations'
 READ_TIME_FIELD = 'read_time'
+LISTING_PRICE_FIELD = 'listing_price'
 USER_ID_FIELD = 'user_id'
 
 AB_TEST_RUNS_TABLE = 'ab_test_runs'

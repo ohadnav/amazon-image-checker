@@ -30,11 +30,12 @@ class LocalMySQLConnector(MySQLConnector):
         os.environ['DB_DATABASE'] = 'test_database'
         os.environ['USER_ID'] = '1'
 
-    def create_images_table_query(self, table_name: str) -> str:
+    def create_product_read_table_query(self, table_name: str) -> str:
         return f'CREATE TABLE IF NOT EXISTS {table_name} ' \
                f'(`{config.ASIN_FIELD}` VARCHAR(10) NOT NULL, ' \
                f'`{config.READ_TIME_FIELD}` DATETIME NOT NULL, ' \
                f'`{config.IMAGE_VARIATIONS_FIELD}` JSON, ' \
+               f'`{config.LISTING_PRICE_FIELD}` FLOAT, ' \
                f'`{config.USER_ID_FIELD}` INT NOT NULL, ' \
                f'PRIMARY KEY (`{config.ASIN_FIELD}`, `{config.READ_TIME_FIELD}`))'
 
@@ -49,8 +50,8 @@ class LocalMySQLConnector(MySQLConnector):
                f'PRIMARY KEY (run_id))'
 
     def drop_test_tables(self):
-        self.run_query(f'DROP TABLE IF EXISTS {config.IMAGES_HISTORY_TABLE}')
-        self.run_query(f'DROP TABLE IF EXISTS {config.IMAGES_CHANGES_TABLE}')
+        self.run_query(f'DROP TABLE IF EXISTS {config.PRODUCT_READ_HISTORY_TABLE}')
+        self.run_query(f'DROP TABLE IF EXISTS {config.PRODUCT_READ_CHANGES_TABLE}')
         self.run_query(f'DROP TABLE IF EXISTS {config.AB_TEST_RUNS_TABLE}')
 
     def drop_test_database(self):
@@ -62,8 +63,8 @@ class LocalMySQLConnector(MySQLConnector):
         self.run_query(create_db_query, with_db=False)
 
     def create_test_tables(self):
-        self.run_query(self.create_images_table_query(config.IMAGES_HISTORY_TABLE))
-        self.run_query(self.create_images_table_query(config.IMAGES_CHANGES_TABLE))
+        self.run_query(self.create_product_read_table_query(config.PRODUCT_READ_HISTORY_TABLE))
+        self.run_query(self.create_product_read_table_query(config.PRODUCT_READ_CHANGES_TABLE))
         self.run_query(self.create_ab_test_runs_table_query())
 
     def kill_all(self):
@@ -90,6 +91,8 @@ class BaseConnectorTestCase(BaseTestCase):
         self.end_time = '23:59:59'
         self.asin_active = 'B01N4J6L3I'
         self.asin_inactive = 'B07JQZQZ4Z'
+        self.listing_price1 = 1.0
+        self.listing_price2 = 2.0
         self.image_variations_of_active_asin = [
             ImageVariation('MAIN', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1a.jpg', 2500, 2500),
             ImageVariation('PT01', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1b.jpg', 500, 500),
@@ -98,8 +101,10 @@ class BaseConnectorTestCase(BaseTestCase):
             ImageVariation('MAIN', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1a.jpg', 2500, 2500),
             ImageVariation('PT01', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1B.jpg', 500, 500),
             ImageVariation('PT02', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1C.jpg', 500, 500)]
-        self.product_read_today = ProductRead(self.asin_active, self.today, self.image_variations_of_active_asin)
-        self.product_read_yesterday = ProductRead(self.asin_active, self.two_days_ago_date, self.image_variations2)
+        self.product_read_today = ProductRead(
+            self.asin_active, self.today, self.image_variations_of_active_asin, self.listing_price1)
+        self.product_read_yesterday = ProductRead(
+            self.asin_active, self.two_days_ago_date, self.image_variations2, self.listing_price2)
         self.product_read_diff = ProductReadDiff(self.product_read_today, self.product_read_yesterday)
         self.ab_test_record1 = ABTestRecord(
             {
@@ -147,9 +152,10 @@ class TestMySQLConnector(BaseConnectorTestCase):
         self.local_connector.insert_product_read(self.product_read_today)
         self.assertEqual(self.local_connector.get_last_product_read(self.asin_active), self.product_read_today)
 
-    def test_insert_images_changes(self):
-        self.local_connector.insert_images_changes(self.product_read_diff)
-        self.assertEqual(self.product_read_diff, self.local_connector.get_last_images_changes(self.asin_active))
+    def test_insert_product_read_changes(self):
+        self.local_connector.insert_product_read_changes(self.product_read_diff)
+        changes_from_db = self.local_connector.get_last_product_read_changes(self.asin_active)
+        self.assertEqual(self.product_read_diff, changes_from_db)
 
     def test_update_feed_id(self):
         self.local_connector.insert_ab_test_run(self.ab_test_run1a)

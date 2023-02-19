@@ -42,7 +42,7 @@ class AmazonApi():
         return image_variations
 
     @throttle_retry()
-    def get_price(self, asin: str) -> float:
+    def get_listing_price(self, asin: str) -> float:
         logging.debug(f'Getting price for asin: {asin}')
         response = Products().get_competitive_pricing_for_asins([asin])
         return response.payload[0]['Product']['CompetitivePricing']['CompetitivePrices'][0]['Price']['ListingPrice'][

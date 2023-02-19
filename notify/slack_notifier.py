@@ -13,15 +13,19 @@ from database.connector import ProductReadDiff
 
 
 def notify(product_read_diff: ProductReadDiff):
-    message = create_message_for_changed_image(product_read_diff)
+    message = create_message_for_product_read_changes(product_read_diff)
     logging.debug(f'Notifying for asin {product_read_diff.asin}: {message}')
     send_message_to_slack(message)
 
 
-def create_message_for_changed_image(product_read_diff: ProductReadDiff) -> str:
+def create_message_for_product_read_changes(product_read_diff: ProductReadDiff) -> str:
     asin_url = AmazonUtil.get_url_from_asin(product_read_diff.asin)
-    variations_with_diff = set([image_variation.variant for image_variation in product_read_diff.image_variations])
-    change_message = f'Image of {asin_url} has changed in variations {", ".join(variations_with_diff)}'
+    change_message = f'Changes in {asin_url}:'
+    if product_read_diff.image_variations:
+        variations_with_diff = set([image_variation.variant for image_variation in product_read_diff.image_variations])
+        change_message += f' changed image variations {", ".join(variations_with_diff)}'
+    if product_read_diff.listing_price:
+        change_message += f' listing price changed to {product_read_diff.listing_price}'
     return change_message
 
 

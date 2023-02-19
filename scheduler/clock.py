@@ -5,14 +5,14 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 from common import util
 from scheduler.ab_test_task import ABTestTask
-from scheduler.image_changes_task import ImageChangesTask
+from scheduler.product_read_changes_task import ProductReadChangesTask
 
 scheduler = BlockingScheduler()
 
 
 @scheduler.scheduled_job('interval', hours=int(os.environ['SCHEDULER_INTERVAL_HOURS']), minutes=7)
-def image_changes_task_scheduler():
-    ImageChangesTask().run()
+def product_read_changes_task_scheduler():
+    ProductReadChangesTask().run()
 
 
 @scheduler.scheduled_job('interval', hours=int(os.environ['SCHEDULER_INTERVAL_HOURS']))

@@ -21,5 +21,5 @@ class TestAmazonApi(BaseTestCase):
     def test_submit_feed(self):
         self.assertIsInstance(self.amazon_api.post_feed(test_util.TEST_FLATFILE_A), int)
 
-    def test_get_price(self):
-        self.assertAlmostEqual(self.amazon_api.get_price(TEST_ASIN), TEST_PRICE)
+    def test_get_listing_price(self):
+        self.assertAlmostEqual(self.amazon_api.get_listing_price(TEST_ASIN), TEST_PRICE)
