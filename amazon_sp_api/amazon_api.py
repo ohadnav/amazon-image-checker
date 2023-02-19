@@ -7,7 +7,7 @@ from io import FileIO, BytesIO
 from typing import List
 
 from dacite import from_dict
-from sp_api.api import CatalogItems, Feeds
+from sp_api.api import CatalogItems, Feeds, Products
 from sp_api.base import FeedType
 from sp_api.util import throttle_retry
 
@@ -40,6 +40,13 @@ class AmazonApi():
         unique_image_variations = set([image_variation.variant for image_variation in image_variations])
         logging.debug(f'Got {unique_image_variations} images for asin: {asin}')
         return image_variations
+
+    @throttle_retry()
+    def get_price(self, asin: str) -> float:
+        logging.debug(f'Getting price for asin: {asin}')
+        response = Products().get_competitive_pricing_for_asins([asin])
+        return response.payload[0]['Product']['CompetitivePricing']['CompetitivePrices'][0]['Price']['ListingPrice'][
+            'Amount']
 
     @throttle_retry()
     def post_feed(self, feed_url: str) -> int:

@@ -3,7 +3,7 @@ from common import test_util
 from common.test_util import BaseTestCase
 
 TEST_ASIN = 'B07Z95MG3S'
-
+TEST_PRICE = 11.99
 
 # TEST_SKU = 'TF-W-THIN-7P8-07'
 
@@ -20,3 +20,6 @@ class TestAmazonApi(BaseTestCase):
 
     def test_submit_feed(self):
         self.assertIsInstance(self.amazon_api.post_feed(test_util.TEST_FLATFILE_A), int)
+
+    def test_get_price(self):
+        self.assertAlmostEqual(self.amazon_api.get_price(TEST_ASIN), TEST_PRICE)
