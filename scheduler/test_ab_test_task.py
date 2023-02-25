@@ -6,10 +6,10 @@ from pytz import timezone
 
 import airtable.config
 from airtable.reader import AirtableReader
-from amazon_api import AmazonApi
+from amazon_sp_api.amazon_api import AmazonApi
 from database.test_connector import BaseConnectorTestCase, LocalMySQLConnector
 from scheduler.ab_test_task import ABTestTask
-from test_reader import ACTIVE_TEST_ID
+from airtable.test_reader import ACTIVE_TEST_ID
 
 
 class ABTestTaskTestCase(BaseConnectorTestCase):
