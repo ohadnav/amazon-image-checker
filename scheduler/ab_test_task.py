@@ -1,13 +1,13 @@
 import logging
 
 from airtable.reader import ABTestRecord, AirtableReader
-from database.connector import ABTestRun
+from database.database_api import ABTestRun
 from scheduler.base_task import BaseTask
 
 
 class ABTestTask(BaseTask):
     def should_run_ab_test(self, ab_test_record: ABTestRecord) -> bool:
-        last_ab_test_run = self.connector.get_last_run_for_ab_test(ab_test_record)
+        last_ab_test_run = self.database_api.get_last_run_for_ab_test(ab_test_record)
         current_variation = AirtableReader.current_variation(ab_test_record)
         if not last_ab_test_run and current_variation == 'B':
             return True
@@ -19,10 +19,10 @@ class ABTestTask(BaseTask):
             if self.should_run_ab_test(ab_test_record):
                 ab_test_run = ABTestRun.from_record(ab_test_record)
                 logging.debug(f'Running AB test: {ab_test_run}')
-                ab_test_run = self.connector.insert_ab_test_run(ab_test_run)
+                ab_test_run = self.database_api.insert_ab_test_run(ab_test_run)
                 ab_test_run.feed_id = self.amazon_api.post_feed(
                     AirtableReader.get_flatfile_url_for_record(ab_test_record))
-                self.connector.update_feed_id(ab_test_run)
+                self.database_api.update_feed_id(ab_test_run)
                 logging.debug(f'Finished running AB test: {ab_test_run}')
 
 

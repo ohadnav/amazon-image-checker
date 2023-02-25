@@ -3,12 +3,12 @@ from datetime import datetime
 
 from airtable.reader import AirtableReader
 from amazon_sp_api.amazon_api import AmazonApi
-from database.connector import MySQLConnector
+from database.database_api import DatabaseApi
 
 
 class BaseTask():
     def __init__(self):
-        self.connector = MySQLConnector()
+        self.database_api = DatabaseApi()
         self.airtable_reader = AirtableReader()
         self.amazon_api = AmazonApi()
 

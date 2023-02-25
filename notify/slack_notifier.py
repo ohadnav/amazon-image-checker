@@ -9,7 +9,7 @@ import sys
 import requests
 
 from amazon_sp_api.amazon_util import AmazonUtil
-from database.connector import ProductReadDiff
+from database.database_api import ProductReadDiff
 
 
 def notify(product_read_diff: ProductReadDiff):

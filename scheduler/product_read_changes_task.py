@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from time import strptime
 from typing import Optional
 
-from database.connector import ProductRead, ProductReadDiff
+from database.database_api import ProductRead, ProductReadDiff
 from notify.slack_notifier import notify
 from scheduler.base_task import BaseTask
 
@@ -32,7 +32,7 @@ class ProductReadChangesTask(BaseTask):
 
     def process_asin(self, asin: str):
         logging.debug('Processing asin {}'.format(asin))
-        last_product_read = self.connector.get_last_product_read(asin)
+        last_product_read = self.database_api.get_last_product_read(asin)
         new_product_read = self.insert_new_product_read(asin)
         if last_product_read:
             product_read_diff = self.is_valid_change(new_product_read, last_product_read)
@@ -45,7 +45,7 @@ class ProductReadChangesTask(BaseTask):
             f'Found product read changes for asin {product_read_diff.asin}'
             f'{" in images " if images_changed else ""}{", ".join(images_changed)}'
             f'{" in listing price " + str(product_read_diff.listing_price) if product_read_diff.listing_price else ""}')
-        self.connector.insert_product_read_changes(product_read_diff)
+        self.database_api.insert_product_read_changes(product_read_diff)
         notify(product_read_diff)
 
     def insert_new_product_read(self, asin: str) -> ProductRead:
@@ -53,7 +53,7 @@ class ProductReadChangesTask(BaseTask):
         images = self.amazon_api.get_images(asin)
         listing_price = self.amazon_api.get_listing_price(asin)
         new_product_read = ProductRead(asin, read_time, images, listing_price)
-        self.connector.insert_product_read(new_product_read)
+        self.database_api.insert_product_read(new_product_read)
         return new_product_read
 
 

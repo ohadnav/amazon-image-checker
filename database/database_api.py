@@ -15,8 +15,7 @@ import airtable.config
 from airtable.reader import ABTestRecord, AirtableReader
 from amazon_sp_api.amazon_api import ImageVariation
 from database import config
-
-SQLQuery = str
+from database.mysql_connector import MySQLConnector, SQLQuery
 
 
 @dataclass
@@ -62,64 +61,10 @@ class ProductReadDiff(ProductRead):
         return bool(self.image_variations) or bool(self.listing_price)
 
 
-class MySQLConnector:
+class DatabaseApi:
     def __init__(self):
-        self.connection = None
-        self.cursor = None
-
-    def __enter__(self):
-        return self.cursor
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close_connection()
-
-    def connect_without_db(self):
-        self.connection = mysql.connector.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD']
-        )
-        self.cursor = self.connection.cursor(buffered=True, dictionary=True)
-
-    def connect(self):
-        if not self.connection or not self.connection.is_connected():
-            self.connect_without_db()
-        if self.connection:
-            self.connection.database = os.environ['DB_DATABASE']
-
-    def run_query(self, query: str, with_db=True) -> list[Any]:
-        results = []
-        try:
-            if with_db:
-                self.connect()
-            else:
-                self.connect_without_db()
-            self.cursor.execute(query)
-            logging.info(f'running query: {query}')
-            self.connection.commit()
-            if self.cursor.rowcount:
-                results = self.cursor.fetchall()
-        except mysql.connector.Error as error:
-            MySQLConnector.handle_error(error, query)
-            raise error
-        finally:
-            if self.connection.is_connected():
-                self.close_connection()
-            logging.debug(f'got results {results} for {query}')
-            return results
-
-    def close_connection(self):
-        self.cursor.close()
-        self.connection.close()
-
-    @staticmethod
-    def handle_error(error, query):
-        logging.error(f'Failed to execute query: {query} with error: {error}')
-        if error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-            logging.error("Something is wrong with your user name or password")
-        elif error.errno == errorcode.ER_BAD_DB_ERROR:
-            logging.error(f'Database error: {error}')
-
+        self.connector = MySQLConnector()
+        
     def _last_product_read_query(self, asin: str, table_name: str) -> SQLQuery:
         query = f'SELECT {config.IMAGE_VARIATIONS_FIELD}, {config.ASIN_FIELD}, {config.READ_TIME_FIELD}, ' \
                 f'{config.LISTING_PRICE_FIELD} ' \
@@ -130,7 +75,7 @@ class MySQLConnector:
 
     def get_last_product_read(self, asin: str, table_name: str = None) -> ProductRead | None:
         table_name = table_name if table_name else config.PRODUCT_READ_HISTORY_TABLE
-        results = self.run_query(self._last_product_read_query(asin, table_name))
+        results = self.connector.run_query(self._last_product_read_query(asin, table_name))
         if results:
             last_product_read = self._parse_query_result_row_to_product_read(results[0])
             return last_product_read
@@ -159,7 +104,7 @@ class MySQLConnector:
 
     def insert_product_read(self, product_read: ProductRead, table_name: str = None):
         table_name = table_name or config.PRODUCT_READ_HISTORY_TABLE
-        self.run_query(self._insert_product_read_query(product_read, table_name))
+        self.connector.run_query(self._insert_product_read_query(product_read, table_name))
 
     def insert_product_read_changes(self, product_read_diff: ProductReadDiff):
         assert product_read_diff.has_diff()
@@ -186,8 +131,8 @@ class MySQLConnector:
         return query
 
     def insert_ab_test_run(self, ab_test_run: ABTestRun) -> ABTestRun:
-        self.run_query(self._insert_ab_test_run_query(ab_test_run))
-        inserted_run_id = self.run_query(self._get_inserted_ab_test_run_id_query(ab_test_run))[0][config.RUN_ID_FIELD]
+        self.connector.run_query(self._insert_ab_test_run_query(ab_test_run))
+        inserted_run_id = self.connector.run_query(self._get_inserted_ab_test_run_id_query(ab_test_run))[0][config.RUN_ID_FIELD]
         inserted_ab_test_run = copy.deepcopy(ab_test_run)
         inserted_ab_test_run.run_id = inserted_run_id
         return inserted_ab_test_run
@@ -209,7 +154,7 @@ class MySQLConnector:
         return ab_test_run
 
     def get_last_run_for_ab_test(self, ab_test_record: ABTestRecord) -> ABTestRun | None:
-        results = self.run_query(self._last_run_for_ab_test_query(ab_test_record))
+        results = self.connector.run_query(self._last_run_for_ab_test_query(ab_test_record))
         if results:
             last_ab_test_run = self._parse_query_result_row_to_ab_test_run(results[0])
             return last_ab_test_run
@@ -223,4 +168,4 @@ class MySQLConnector:
         return query
 
     def update_feed_id(self, ab_test_run: ABTestRun):
-        self.run_query(self._update_feed_id_query(ab_test_run))
+        self.connector.run_query(self._update_feed_id_query(ab_test_run))
