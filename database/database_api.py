@@ -2,20 +2,17 @@ from __future__ import annotations
 
 import copy
 import json
-import logging
 import os
 from dataclasses import dataclass, asdict
 from datetime import datetime
-from typing import Any, List, Optional
-
-import mysql.connector
-from mysql.connector import errorcode
+from typing import List, Optional
 
 import airtable.config
 from airtable.reader import ABTestRecord, AirtableReader
 from amazon_sp_api.amazon_api import ImageVariation
 from database import config
-from database.mysql_connector import MySQLConnector, SQLQuery
+from database.base_connector import BaseConnector
+from database.mysql_connector import SQLQuery
 
 
 @dataclass
@@ -62,9 +59,9 @@ class ProductReadDiff(ProductRead):
 
 
 class DatabaseApi:
-    def __init__(self):
-        self.connector = MySQLConnector()
-        
+    def __init__(self, connector: BaseConnector):
+        self.connector = connector
+
     def _last_product_read_query(self, asin: str, table_name: str) -> SQLQuery:
         query = f'SELECT {config.IMAGE_VARIATIONS_FIELD}, {config.ASIN_FIELD}, {config.READ_TIME_FIELD}, ' \
                 f'{config.LISTING_PRICE_FIELD} ' \
@@ -132,7 +129,8 @@ class DatabaseApi:
 
     def insert_ab_test_run(self, ab_test_run: ABTestRun) -> ABTestRun:
         self.connector.run_query(self._insert_ab_test_run_query(ab_test_run))
-        inserted_run_id = self.connector.run_query(self._get_inserted_ab_test_run_id_query(ab_test_run))[0][config.RUN_ID_FIELD]
+        inserted_run_id = self.connector.run_query(self._get_inserted_ab_test_run_id_query(ab_test_run))[0][
+            config.RUN_ID_FIELD]
         inserted_ab_test_run = copy.deepcopy(ab_test_run)
         inserted_ab_test_run.run_id = inserted_run_id
         return inserted_ab_test_run

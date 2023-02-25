@@ -5,6 +5,7 @@ from common.test_util import BaseTestCase
 TEST_ASIN = 'B07Z95MG3S'
 TEST_PRICE = 11.99
 
+
 # TEST_SKU = 'TF-W-THIN-7P8-07'
 
 

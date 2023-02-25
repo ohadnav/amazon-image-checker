@@ -11,14 +11,13 @@ from common.test_util import BaseTestCase, TEST_FLATFILE_A, TEST_FLATFILE_B
 from database import config
 from database.database_api import DatabaseApi, ProductRead, ProductReadDiff, ABTestRun
 from database.local_mysql_connector import LocalMySQLConnector
-from database.mysql_connector import MySQLConnector
 
 
 class BaseConnectorTestCase(BaseTestCase):
     def setUp(self) -> None:
         super(BaseConnectorTestCase, self).setUp()
         self.local_connector = LocalMySQLConnector()
-        self.database_api = DatabaseApi()
+        self.database_api = DatabaseApi(self.local_connector)
         self.define_const()
 
     def tearDown(self) -> None:

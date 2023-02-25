@@ -5,11 +5,9 @@ from freezegun import freeze_time
 from pytz import timezone
 
 import airtable.config
-from airtable.reader import AirtableReader
-from amazon_sp_api.amazon_api import AmazonApi
-from database.test_database_api import BaseConnectorTestCase, LocalMySQLConnector
-from scheduler.ab_test_task import ABTestTask
 from airtable.test_reader import ACTIVE_TEST_ID
+from database.test_database_api import BaseConnectorTestCase
+from scheduler.ab_test_task import ABTestTask
 
 
 class ABTestTaskTestCase(BaseConnectorTestCase):
@@ -17,7 +15,7 @@ class ABTestTaskTestCase(BaseConnectorTestCase):
     def setUp(self) -> None:
         super(ABTestTaskTestCase, self).setUp()
         self.ab_test_task = ABTestTask()
-        self.ab_test_task.database_api = self.local_connector
+        self.ab_test_task.database_api = self.database_api
         self.ab_test_task.amazon_api = MagicMock()
         self.ab_test_task.airtable_reader = MagicMock()
 
@@ -55,9 +53,7 @@ class ABTestTaskTestCase(BaseConnectorTestCase):
         self.ab_test_task.database_api.insert_ab_test_run.assert_called_once()
 
     def test_task_integration(self):
-        self.ab_test_task.amazon_api = AmazonApi()
-        self.ab_test_task.airtable_reader = AirtableReader()
-        self.ab_test_task.database_api = LocalMySQLConnector()
+        self.ab_test_task = ABTestTask()
         self.ab_test_task.should_run_ab_test = MagicMock(return_value=True)
         with freeze_time(
                 datetime.strptime('2023-01-16 00:01', airtable.config.PYTHON_TIME_FORMAT).astimezone(

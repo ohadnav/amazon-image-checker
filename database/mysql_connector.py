@@ -1,25 +1,18 @@
 from __future__ import annotations
 
-import copy
-import json
 import logging
 import os
-from dataclasses import dataclass, asdict
-from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any
 
 import mysql.connector
 from mysql.connector import errorcode
 
-import airtable.config
-from airtable.reader import ABTestRecord, AirtableReader
-from amazon_sp_api.amazon_api import ImageVariation
-from database import config
+from database.base_connector import BaseConnector
 
 SQLQuery = str
 
 
-class MySQLConnector:
+class MySQLConnector(BaseConnector):
     def __init__(self):
         self.connection = None
         self.cursor = None
@@ -57,7 +50,7 @@ class MySQLConnector:
             if self.cursor.rowcount:
                 results = self.cursor.fetchall()
         except mysql.connector.Error as error:
-            MySQLConnector.handle_error(error, query)
+            self.handle_error(error, query)
             raise error
         finally:
             if self.connection.is_connected():
@@ -69,9 +62,8 @@ class MySQLConnector:
         self.cursor.close()
         self.connection.close()
 
-    @staticmethod
-    def handle_error(error, query):
-        logging.error(f'Failed to execute query: {query} with error: {error}')
+    def handle_error(self, error, query):
+        super(MySQLConnector, self).handle_error(error, query)
         if error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
             logging.error("Something is wrong with your user name or password")
         elif error.errno == errorcode.ER_BAD_DB_ERROR:

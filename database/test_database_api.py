@@ -1,17 +1,6 @@
 from __future__ import annotations
 
-import copy
-import os
-from datetime import datetime, timedelta
-
-import airtable.config
-from airtable.reader import ABTestRecord
-from amazon_sp_api.amazon_api import ImageVariation
-from common.test_util import BaseTestCase, TEST_FLATFILE_A, TEST_FLATFILE_B
-from database import config
 from database.base_connector_test_case import BaseConnectorTestCase
-from database.database_api import DatabaseApi, ProductRead, ProductReadDiff, ABTestRun
-from database.mysql_connector import MySQLConnector
 
 
 class TestDatabaseApi(BaseConnectorTestCase):
