@@ -10,13 +10,13 @@ from amazon_sp_api.amazon_api import ImageVariation
 from common.test_util import BaseTestCase, TEST_FLATFILE_A, TEST_FLATFILE_B
 from database import config
 from database.database_api import DatabaseApi, ProductRead, ProductReadDiff, ABTestRun
-from database.local_mysql_connector import LocalMySQLConnector
+from database.local_postgres_connector import LocalPostgresConnector
 
 
 class BaseConnectorTestCase(BaseTestCase):
     def setUp(self) -> None:
         super(BaseConnectorTestCase, self).setUp()
-        self.local_connector = LocalMySQLConnector()
+        self.local_connector = LocalPostgresConnector()
         self.database_api = DatabaseApi(self.local_connector)
         self.define_const()
 
@@ -75,8 +75,8 @@ class BaseConnectorTestCase(BaseTestCase):
             self.ab_test_record2.fields[airtable.config.TEST_ID_FIELD], self.yesterday, 'B', 4, 4)
 
     def get_feed_id_by_run_id(self, run_id: int) -> int | None:
-        query = f'SELECT {config.FEED_ID_FIELD} FROM {config.AB_TEST_RUNS_TABLE} ' \
-                f'WHERE {config.RUN_ID_FIELD} = "{run_id}"'
+        query = f"SELECT {config.FEED_ID_FIELD} FROM {config.AB_TEST_RUNS_TABLE} " \
+                f"WHERE {config.RUN_ID_FIELD} = '{run_id}'"
         result = self.local_connector.run_query(query)
         if result:
             return result[0][config.FEED_ID_FIELD]

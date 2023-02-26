@@ -6,6 +6,8 @@ from pytz import timezone
 
 import airtable.config
 from airtable.test_reader import ACTIVE_TEST_ID
+from database.database_api import DatabaseApi
+from database.local_postgres_connector import LocalPostgresConnector
 from database.test_database_api import BaseConnectorTestCase
 from scheduler.ab_test_task import ABTestTask
 
@@ -54,6 +56,7 @@ class ABTestTaskTestCase(BaseConnectorTestCase):
 
     def test_task_integration(self):
         self.ab_test_task = ABTestTask()
+        self.ab_test_task.database_api = DatabaseApi(LocalPostgresConnector())
         self.ab_test_task.should_run_ab_test = MagicMock(return_value=True)
         with freeze_time(
                 datetime.strptime('2023-01-16 00:01', airtable.config.PYTHON_TIME_FORMAT).astimezone(

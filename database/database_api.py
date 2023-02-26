@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import json
 import os
 from dataclasses import dataclass, asdict
 from datetime import datetime
@@ -62,11 +61,11 @@ class DatabaseApi:
         self.connector = connector
 
     def _last_product_read_query(self, asin: str, table_name: str) -> SQLQuery:
-        query = f'SELECT {config.IMAGE_VARIATIONS_FIELD}, {config.ASIN_FIELD}, {config.READ_TIME_FIELD}, ' \
-                f'{config.LISTING_PRICE_FIELD} ' \
-                f'FROM {table_name} ' \
-                f'WHERE {config.ASIN_FIELD}  = "{asin}" AND {config.USER_ID_FIELD} = {os.environ["USER_ID"]} ' \
-                f'ORDER BY {config.READ_TIME_FIELD} DESC LIMIT 1'
+        query = f"SELECT {config.IMAGE_VARIATIONS_FIELD}, {config.ASIN_FIELD}, {config.READ_TIME_FIELD}, " \
+                f"{config.LISTING_PRICE_FIELD} " \
+                f"FROM {table_name} " \
+                f"WHERE {config.ASIN_FIELD}  = '{asin}' AND {config.USER_ID_FIELD} = {os.environ['USER_ID']} " \
+                f"ORDER BY {config.READ_TIME_FIELD} DESC LIMIT 1"
         return query
 
     def get_last_product_read(self, asin: str, table_name: str = None) -> ProductRead | None:
@@ -78,8 +77,8 @@ class DatabaseApi:
         return None
 
     def _parse_query_result_row_to_product_read(self, result_row: dict) -> ProductRead:
-        image_variations = json.loads(result_row[config.IMAGE_VARIATIONS_FIELD])
-        image_variations_list = [ImageVariation(**image_variation) for image_variation in image_variations]
+        image_variations_list = [ImageVariation(**image_variation) for image_variation in
+                                 result_row[config.IMAGE_VARIATIONS_FIELD]]
         product_read = ProductRead(
             asin=result_row[config.ASIN_FIELD], read_time=result_row[config.READ_TIME_FIELD],
             image_variations=image_variations_list, listing_price=result_row[config.LISTING_PRICE_FIELD])
@@ -88,15 +87,15 @@ class DatabaseApi:
     def _insert_product_read_query(self, product_read: ProductRead, table_name: str):
         # convert image_variations from list to str matching the format in the database
         image_variations_json = self._prepare_json_to_sql_insert_query(product_read)
-        query = f'INSERT INTO {table_name} ' \
-                f'({config.ASIN_FIELD}, {config.IMAGE_VARIATIONS_FIELD}, {config.READ_TIME_FIELD}, ' \
-                f'{config.LISTING_PRICE_FIELD}, {config.USER_ID_FIELD}) ' \
-                f'VALUES ("{product_read.asin}", "{image_variations_json}", "{product_read.read_time}", ' \
-                f'{product_read.listing_price}, {os.environ["USER_ID"]})'
+        query = f"INSERT INTO {table_name} " \
+                f"({config.ASIN_FIELD}, {config.IMAGE_VARIATIONS_FIELD}, {config.READ_TIME_FIELD}, " \
+                f"{config.LISTING_PRICE_FIELD}, {config.USER_ID_FIELD}) " \
+                f"VALUES ('{product_read.asin}', '{image_variations_json}', '{product_read.read_time}', " \
+                f"{product_read.listing_price}, {os.environ['USER_ID']})"
         return query
 
     def _prepare_json_to_sql_insert_query(self, product_read: ProductRead) -> SQLQuery:
-        return str(asdict(product_read)['image_variations']).replace("'", '\\"')
+        return str(asdict(product_read)['image_variations']).replace("'", '"')
 
     def insert_product_read(self, product_read: ProductRead, table_name: str = None):
         table_name = table_name or config.PRODUCT_READ_HISTORY_TABLE
@@ -113,17 +112,17 @@ class DatabaseApi:
         return None
 
     def _insert_ab_test_run_query(self, ab_test_run: ABTestRun) -> SQLQuery:
-        query = f'INSERT INTO {config.AB_TEST_RUNS_TABLE} ' \
-                f'({config.AB_TEST_ID_FIELD}, {config.RUN_TIME_FIELD}, {config.VARIATION_FIELD}, ' \
-                f'{config.USER_ID_FIELD}) ' \
-                f'VALUES ("{ab_test_run.test_id}", "{ab_test_run.run_time}", "{ab_test_run.variation}", ' \
-                f'{os.environ["USER_ID"]})'
+        query = f"INSERT INTO {config.AB_TEST_RUNS_TABLE} " \
+                f"({config.AB_TEST_ID_FIELD}, {config.RUN_TIME_FIELD}, {config.VARIATION_FIELD}, " \
+                f"{config.USER_ID_FIELD}) " \
+                f"VALUES ('{ab_test_run.test_id}', '{ab_test_run.run_time}', '{ab_test_run.variation}', " \
+                f"{os.environ['USER_ID']})"
         return query
 
     def _get_inserted_ab_test_run_id_query(self, ab_test_run: ABTestRun) -> SQLQuery:
-        query = f'SELECT {config.RUN_ID_FIELD} FROM {config.AB_TEST_RUNS_TABLE} ' \
-                f'WHERE {config.AB_TEST_ID_FIELD} = "{ab_test_run.test_id}" ' \
-                f'ORDER BY {config.RUN_ID_FIELD} DESC LIMIT 1 '
+        query = f"SELECT {config.RUN_ID_FIELD} FROM {config.AB_TEST_RUNS_TABLE} " \
+                f"WHERE {config.AB_TEST_ID_FIELD} = '{ab_test_run.test_id}' " \
+                f"ORDER BY {config.RUN_ID_FIELD} DESC LIMIT 1 "
         return query
 
     def insert_ab_test_run(self, ab_test_run: ABTestRun) -> ABTestRun:
@@ -135,12 +134,12 @@ class DatabaseApi:
         return inserted_ab_test_run
 
     def _last_run_for_ab_test_query(self, ab_test_record: ABTestRecord) -> SQLQuery:
-        query = f'SELECT {config.AB_TEST_ID_FIELD}, {config.AB_TEST_ID_FIELD}, {config.RUN_TIME_FIELD},' \
-                f' {config.VARIATION_FIELD}, {config.FEED_ID_FIELD}, {config.RUN_ID_FIELD} ' \
-                f'FROM {config.AB_TEST_RUNS_TABLE} ' \
-                f'WHERE {config.AB_TEST_ID_FIELD}  = "{ab_test_record.fields[airtable.config.TEST_ID_FIELD]}"' \
-                f' AND {config.USER_ID_FIELD} = {os.environ["USER_ID"]} ' \
-                f'ORDER BY {config.RUN_ID_FIELD} DESC LIMIT 1'
+        query = f"SELECT {config.AB_TEST_ID_FIELD}, {config.AB_TEST_ID_FIELD}, {config.RUN_TIME_FIELD}," \
+                f" {config.VARIATION_FIELD}, {config.FEED_ID_FIELD}, {config.RUN_ID_FIELD} " \
+                f"FROM {config.AB_TEST_RUNS_TABLE} " \
+                f"WHERE {config.AB_TEST_ID_FIELD}  = '{ab_test_record.fields[airtable.config.TEST_ID_FIELD]}'" \
+                f" AND {config.USER_ID_FIELD} = {os.environ['USER_ID']} " \
+                f"ORDER BY {config.RUN_ID_FIELD} DESC LIMIT 1"
         return query
 
     def _parse_query_result_row_to_ab_test_run(self, result_row: dict) -> ABTestRun:
@@ -158,10 +157,12 @@ class DatabaseApi:
         return None
 
     def _update_feed_id_query(self, ab_test_run: ABTestRun) -> SQLQuery:
-        query = f'UPDATE {config.AB_TEST_RUNS_TABLE} ' \
-                f'SET {config.FEED_ID_FIELD} = "{ab_test_run.feed_id}" ' \
-                f'WHERE {config.AB_TEST_ID_FIELD} = "{ab_test_run.test_id}" ' \
-                f'ORDER BY {config.RUN_ID_FIELD} DESC LIMIT 1'
+        query = f"UPDATE {config.AB_TEST_RUNS_TABLE} " \
+                f"SET {config.FEED_ID_FIELD} = '{ab_test_run.feed_id}' " \
+                f"WHERE {config.RUN_ID_FIELD} = (" \
+                f"SELECT {config.RUN_ID_FIELD} FROM {config.AB_TEST_RUNS_TABLE} " \
+                f"WHERE {config.AB_TEST_ID_FIELD} = '{ab_test_run.test_id}' " \
+                f"ORDER BY {config.RUN_ID_FIELD} DESC LIMIT 1)"
         return query
 
     def update_feed_id(self, ab_test_run: ABTestRun):

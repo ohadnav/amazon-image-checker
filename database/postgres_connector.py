@@ -4,6 +4,7 @@ import logging
 import os
 
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 from database.base_connector import BaseConnector, SQLQuery
 
@@ -18,6 +19,9 @@ class PostgresConnector(BaseConnector):
                                       database=os.environ['POSTGRES_DATABASE'] if with_db else None)
         pg_connect.set_session(autocommit=True)
         return pg_connect
+
+    def init_cursor(self):
+        self.cursor = self.connection.cursor(cursor_factory=RealDictCursor)
 
     def is_connected(self) -> bool:
         return self.connection is not None and not self.connection.closed

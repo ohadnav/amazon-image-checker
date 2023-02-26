@@ -26,7 +26,7 @@ class BaseConnector:
             logging.info(f'running query: {query}')
             self.cursor.execute(query)
             self.connection.commit()
-            if with_db and self.cursor.rowcount > 0:
+            if self.should_fetch(with_db, query):
                 results = self.cursor.fetchall()
         except Exception as error:
             self.handle_error(error, query)
@@ -36,6 +36,9 @@ class BaseConnector:
                 self.close_connection()
             logging.debug(f'got results {results} for {query}')
             return results
+
+    def should_fetch(self, with_db: bool, query: SQLQuery) -> bool:
+        return with_db and query.lower().startswith('select') and self.cursor.rowcount > 0
 
     @abstractmethod
     def handle_error(self, error: Exception, query: SQLQuery):

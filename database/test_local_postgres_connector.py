@@ -14,7 +14,7 @@ class TestLocalPostgresConnectorTestCase(BaseTestCase):
     def test_create_test_tables(self):
         expected_tables = {config.PRODUCT_READ_HISTORY_TABLE, config.PRODUCT_READ_CHANGES_TABLE,
                            config.AB_TEST_RUNS_TABLE}
-        actual_tables = set(self.local_connector.run_query(f"SELECT table_name FROM information_schema.tables "
-                                                           f"WHERE table_schema='public' AND table_type='BASE TABLE';"))
-        actual_tables = {table[0] for table in actual_tables}
+        actual_tables = self.local_connector.run_query(f"SELECT table_name FROM information_schema.tables "
+                                                       f"WHERE table_schema='public' AND table_type='BASE TABLE';")
+        actual_tables = {table['table_name'] for table in actual_tables}
         self.assertSetEqual(expected_tables, actual_tables)

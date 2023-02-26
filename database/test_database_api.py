@@ -33,12 +33,13 @@ class TestDatabaseApi(BaseConnectorTestCase):
         self.assertIsNone(self.database_api.get_last_run_for_ab_test(self.ab_test_record2).feed_id)
 
     def test_get_last_run_for_ab_test(self):
+        self.ab_test_run1a.feed_id = None
         inserted_ab_test_run = self.database_api.insert_ab_test_run(self.ab_test_run1a)
         self.assertEqual(self.ab_test_run1a.run_id, inserted_ab_test_run.run_id)
-        self.ab_test_run1a.feed_id = None
         self.assertEqual(self.database_api.get_last_run_for_ab_test(self.ab_test_record1), self.ab_test_run1a)
-        self.database_api.insert_ab_test_run(self.ab_test_run1b)
+
         self.ab_test_run1b.feed_id = None
+        self.database_api.insert_ab_test_run(self.ab_test_run1b)
         self.assertEqual(self.database_api.get_last_run_for_ab_test(self.ab_test_record1), self.ab_test_run1b)
 
     def get_last_run_for_ab_test_no_runs(self):
