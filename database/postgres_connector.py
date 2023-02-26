@@ -10,13 +10,8 @@ from database.base_connector import BaseConnector, SQLQuery
 
 
 class PostgresConnector(BaseConnector):
-    def __init__(self):
-        super(PostgresConnector, self).__init__(os.environ['POSTGRES_DATABASE'])
-
-    def create_new_connection(self, with_db: bool) -> object:
-        pg_connect = psycopg2.connect(host=os.environ['POSTGRES_HOST'], user=os.environ['POSTGRES_USER'],
-                                      password=os.environ['POSTGRES_PASSWORD'],
-                                      database=os.environ['POSTGRES_DATABASE'] if with_db else None)
+    def create_new_connection(self) -> object:
+        pg_connect = psycopg2.connect(os.environ['DATABASE_URL'])
         pg_connect.set_session(autocommit=True)
         return pg_connect
 

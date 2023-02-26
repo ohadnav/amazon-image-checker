@@ -7,7 +7,7 @@ from database.postgres_connector import PostgresConnector
 class LocalPostgresConnector(PostgresConnector):
     def __init__(self):
         super(LocalPostgresConnector, self).__init__()
-        self.create_test_database()
+        self.kill_all()
         self.create_test_tables()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -37,14 +37,6 @@ class LocalPostgresConnector(PostgresConnector):
         self.run_query(f'DROP TABLE IF EXISTS {config.PRODUCT_READ_CHANGES_TABLE}')
         self.run_query(f'DROP TABLE IF EXISTS {config.AB_TEST_RUNS_TABLE}')
 
-    def drop_test_database(self):
-        drop_db_query = 'DROP DATABASE test_database;'
-        self.run_query(drop_db_query, with_db=False)
-
-    def create_test_database(self):
-        create_db_query = 'CREATE DATABASE test_database;'
-        self.run_query(create_db_query, with_db=False)
-
     def create_test_tables(self):
         self.run_query(self.create_product_read_table_query(config.PRODUCT_READ_HISTORY_TABLE))
         self.run_query(self.create_product_read_table_query(config.PRODUCT_READ_CHANGES_TABLE))
@@ -52,4 +44,3 @@ class LocalPostgresConnector(PostgresConnector):
 
     def kill_all(self):
         self.drop_test_tables()
-        self.drop_test_database()
