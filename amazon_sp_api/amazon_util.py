@@ -1,5 +1,7 @@
 import re
 
+from amazon_sp_api.amazon_api import ASIN
+
 
 class AmazonUtil():
     @staticmethod
@@ -8,6 +10,6 @@ class AmazonUtil():
         return asin
 
     @staticmethod
-    def get_url_from_asin(asin: str) -> str:
+    def get_url_from_asin(asin: ASIN) -> str:
         url = 'https://www.amazon.com/dp/' + asin
         return url

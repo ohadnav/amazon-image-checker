@@ -34,16 +34,16 @@ class TestProductReadChangesTask(BaseConnectorTestCase):
         self.product_read_changes_task.insert_new_product_read = MagicMock(return_value=self.product_read_today)
         self.product_read_changes_task.process_product_read_changed = MagicMock()
         self.product_read_changes_task.is_valid_change = MagicMock()
-        self.product_read_changes_task.process_asin(self.asin_active)
+        self.product_read_changes_task.process_asin(self.asin_active, self.ab_test_record1)
         self.product_read_changes_task.is_valid_change.assert_not_called()
         self.product_read_changes_task.process_product_read_changed.assert_not_called()
 
         self.product_read_changes_task.database_api.get_last_product_read = MagicMock(
             return_value=self.product_read_yesterday)
         self.product_read_changes_task.is_valid_change = MagicMock(return_value=None)
-        self.product_read_changes_task.process_asin(self.asin_active)
+        self.product_read_changes_task.process_asin(self.asin_active, self.ab_test_record1)
         self.product_read_changes_task.process_product_read_changed.assert_not_called()
 
         self.product_read_changes_task.is_valid_change = MagicMock(return_value=self.product_read_diff)
-        self.product_read_changes_task.process_asin(self.asin_active)
+        self.product_read_changes_task.process_asin(self.asin_active, self.ab_test_record1)
         self.product_read_changes_task.process_product_read_changed.assert_called()

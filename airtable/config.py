@@ -4,6 +4,7 @@ ROTATION_FIELD = 'Rotation (hour)'
 FLATFILE_FIELD = {'A': 'Flatfile A', 'B': 'Flatfile B'}
 STATUS_FIELD = 'Status'
 TEST_ID_FIELD = 'test_id'
+MERCHANT_FIELD = 'Merchant'
 
 PYTHON_TIME_FORMAT = '%Y-%m-%d %H:%M'
 AIRTABLE_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S.000Z'

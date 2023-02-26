@@ -63,3 +63,15 @@ class BaseConnector:
     def close_connection(self):
         self.cursor.close()
         self.connection.close()
+
+    @abstractmethod
+    def create_merchants_table_query(self) -> str:
+        pass
+
+    @abstractmethod
+    def create_ab_test_runs_table_query(self) -> str:
+        pass
+
+    @abstractmethod
+    def create_product_read_table_query(self, table_name: str) -> str:
+        pass

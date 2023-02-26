@@ -59,5 +59,6 @@ class BaseAirtableReaderTestCase(BaseTestCase):
 
     def test_get_asins_with_active_ab_test(self):
         AirtableReader.current_variation = MagicMock(return_value='A')
-        self.assertListEqual(
-            self.airtable_reader.get_asins_of_active_ab_test(), [TEST_ASIN])
+        active_ab_tests = self.airtable_reader.get_active_ab_test_records()
+        self.assertDictEqual(
+            self.airtable_reader.get_asins_to_active_ab_test(), {TEST_ASIN: active_ab_tests[ACTIVE_TEST_ID]})

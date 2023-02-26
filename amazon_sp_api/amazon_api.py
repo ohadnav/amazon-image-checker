@@ -11,6 +11,8 @@ from sp_api.api import CatalogItems, Feeds, Products
 from sp_api.base import FeedType
 from sp_api.util import throttle_retry
 
+ASIN = str
+
 
 @dataclass
 class ImageVariation:
@@ -28,7 +30,7 @@ class ImageVariation:
 
 class AmazonApi():
     @throttle_retry()
-    def get_images(self, asin: str) -> List[ImageVariation]:
+    def get_images(self, asin: ASIN) -> List[ImageVariation]:
         logging.debug(f'Getting images for asin: {asin}')
         response = CatalogItems().get_catalog_item(asin, includedData=['images'])
         images_response = response.payload['images'][0]['images']
@@ -42,7 +44,7 @@ class AmazonApi():
         return image_variations
 
     @throttle_retry()
-    def get_listing_price(self, asin: str) -> float:
+    def get_listing_price(self, asin: ASIN) -> float:
         logging.debug(f'Getting price for asin: {asin}')
         response = Products().get_competitive_pricing_for_asins([asin])
         return response.payload[0]['Product']['CompetitivePricing']['CompetitivePrices'][0]['Price']['ListingPrice'][

@@ -2,12 +2,13 @@ import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Mapping
+from typing import Mapping
 
 import pandas as pd
 from pyairtable import Table
 
 from airtable import config
+from amazon_sp_api.amazon_api import ASIN
 
 ABTestId = int
 
@@ -58,15 +59,15 @@ class AirtableReader():
     def get_flatfile_url_for_record(record: ABTestRecord) -> dict:
         return AirtableReader.get_flatfile_for_record(record)['url']
 
-    def get_asins_of_active_ab_test(self) -> List[str]:
-        all_asins = []
+    def get_asins_to_active_ab_test(self) -> Mapping[ASIN, ABTestRecord]:
+        asin_to_ab_test_records = {}
         for ab_test_record in self.get_active_ab_test_records().values():
             flatfile_url = self.get_flatfile_url_for_record(ab_test_record)
             ab_test_df = pd.read_excel(flatfile_url, sheet_name=config.FLATFILE_SHEET_NAME, skiprows=[0, 2]).dropna(
                 how='all')
             ab_test_asins = ab_test_df[config.FLATFILE_ASIN_COLUMN].dropna().tolist()
-            all_asins.extend(ab_test_asins)
-        return all_asins
+            asin_to_ab_test_records.update({asin: ab_test_record for asin in ab_test_asins})
+        return asin_to_ab_test_records
 
     @staticmethod
     def _get_raw_record_fields(record: dict) -> dict:

@@ -1,24 +1,24 @@
 from __future__ import annotations
 
 import copy
-import os
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from typing import List, Optional
 
 import airtable.config
 from airtable.reader import ABTestRecord, AirtableReader
-from amazon_sp_api.amazon_api import ImageVariation
+from amazon_sp_api.amazon_api import ImageVariation, ASIN
 from database import config
 from database.base_connector import BaseConnector, SQLQuery
 
 
 @dataclass
 class ProductRead:
-    asin: str
+    asin: ASIN
     read_time: datetime
     image_variations: List[ImageVariation]
     listing_price: Optional[float]
+    merchant: str
 
 
 @dataclass
@@ -26,6 +26,7 @@ class ABTestRun:
     test_id: int
     run_time: datetime
     variation: str
+    merchant: str
     run_id: int = None
     feed_id: int = None
 
@@ -33,7 +34,8 @@ class ABTestRun:
     def from_record(ab_test_record: ABTestRecord):
         return ABTestRun(
             test_id=ab_test_record.fields[airtable.config.TEST_ID_FIELD], run_time=datetime.now(),
-            variation=AirtableReader.current_variation(ab_test_record))
+            variation=AirtableReader.current_variation(ab_test_record),
+            merchant=ab_test_record.fields[airtable.config.MERCHANT_FIELD])
 
 
 @dataclass
@@ -43,6 +45,7 @@ class ProductReadDiff(ProductRead):
             assert current.asin == last.asin and current.read_time > last.read_time
         self.asin = current.asin
         self.read_time = current.read_time
+        self.merchant = current.merchant
         self.image_variations = ProductReadDiff._calculate_variants_with_diff(
             current, last) if last else current.image_variations
         self.listing_price = current.listing_price if not last or current.listing_price != \
@@ -60,17 +63,19 @@ class DatabaseApi:
     def __init__(self, connector: BaseConnector):
         self.connector = connector
 
-    def _last_product_read_query(self, asin: str, table_name: str) -> SQLQuery:
+    def _last_product_read_query(self, asin: ASIN, ab_test_record: ABTestRecord, table_name: str) -> SQLQuery:
         query = f"SELECT {config.IMAGE_VARIATIONS_FIELD}, {config.ASIN_FIELD}, {config.READ_TIME_FIELD}, " \
-                f"{config.LISTING_PRICE_FIELD} " \
+                f"{config.LISTING_PRICE_FIELD}, {config.MERCHANT_FIELD} " \
                 f"FROM {table_name} " \
-                f"WHERE {config.ASIN_FIELD}  = '{asin}' AND {config.USER_ID_FIELD} = {os.environ['USER_ID']} " \
+                f"WHERE {config.ASIN_FIELD}  = '{asin}' AND " \
+                f"{config.MERCHANT_FIELD} = '{ab_test_record.fields[airtable.config.MERCHANT_FIELD]}' " \
                 f"ORDER BY {config.READ_TIME_FIELD} DESC LIMIT 1"
         return query
 
-    def get_last_product_read(self, asin: str, table_name: str = None) -> ProductRead | None:
+    def get_last_product_read(self, asin: ASIN, ab_test_record: ABTestRecord,
+                              table_name: str = None) -> ProductRead | None:
         table_name = table_name if table_name else config.PRODUCT_READ_HISTORY_TABLE
-        results = self.connector.run_query(self._last_product_read_query(asin, table_name))
+        results = self.connector.run_query(self._last_product_read_query(asin, ab_test_record, table_name))
         if results:
             last_product_read = self._parse_query_result_row_to_product_read(results[0])
             return last_product_read
@@ -81,7 +86,8 @@ class DatabaseApi:
                                  result_row[config.IMAGE_VARIATIONS_FIELD]]
         product_read = ProductRead(
             asin=result_row[config.ASIN_FIELD], read_time=result_row[config.READ_TIME_FIELD],
-            image_variations=image_variations_list, listing_price=result_row[config.LISTING_PRICE_FIELD])
+            image_variations=image_variations_list, listing_price=result_row[config.LISTING_PRICE_FIELD],
+            merchant=result_row[config.MERCHANT_FIELD])
         return product_read
 
     def _insert_product_read_query(self, product_read: ProductRead, table_name: str):
@@ -89,9 +95,9 @@ class DatabaseApi:
         image_variations_json = self._prepare_json_to_sql_insert_query(product_read)
         query = f"INSERT INTO {table_name} " \
                 f"({config.ASIN_FIELD}, {config.IMAGE_VARIATIONS_FIELD}, {config.READ_TIME_FIELD}, " \
-                f"{config.LISTING_PRICE_FIELD}, {config.USER_ID_FIELD}) " \
+                f"{config.LISTING_PRICE_FIELD}, {config.MERCHANT_FIELD}) " \
                 f"VALUES ('{product_read.asin}', '{image_variations_json}', '{product_read.read_time}', " \
-                f"{product_read.listing_price}, {os.environ['USER_ID']})"
+                f"{product_read.listing_price}, '{product_read.merchant}')"
         return query
 
     def _prepare_json_to_sql_insert_query(self, product_read: ProductRead) -> SQLQuery:
@@ -105,8 +111,8 @@ class DatabaseApi:
         assert product_read_diff.has_diff()
         self.insert_product_read(product_read_diff, config.PRODUCT_READ_CHANGES_TABLE)
 
-    def get_last_product_read_changes(self, asin: str) -> ProductReadDiff | None:
-        product_read_maybe = self.get_last_product_read(asin, config.PRODUCT_READ_CHANGES_TABLE)
+    def get_last_product_read_changes(self, asin: ASIN, ab_test_record: ABTestRecord) -> ProductReadDiff | None:
+        product_read_maybe = self.get_last_product_read(asin, ab_test_record, config.PRODUCT_READ_CHANGES_TABLE)
         if product_read_maybe:
             return ProductReadDiff(product_read_maybe)
         return None
@@ -114,9 +120,9 @@ class DatabaseApi:
     def _insert_ab_test_run_query(self, ab_test_run: ABTestRun) -> SQLQuery:
         query = f"INSERT INTO {config.AB_TEST_RUNS_TABLE} " \
                 f"({config.AB_TEST_ID_FIELD}, {config.RUN_TIME_FIELD}, {config.VARIATION_FIELD}, " \
-                f"{config.USER_ID_FIELD}) " \
+                f"{config.MERCHANT_FIELD}) " \
                 f"VALUES ('{ab_test_run.test_id}', '{ab_test_run.run_time}', '{ab_test_run.variation}', " \
-                f"{os.environ['USER_ID']})"
+                f"'{ab_test_run.merchant}')"
         return query
 
     def _get_inserted_ab_test_run_id_query(self, ab_test_run: ABTestRun) -> SQLQuery:
@@ -134,19 +140,19 @@ class DatabaseApi:
         return inserted_ab_test_run
 
     def _last_run_for_ab_test_query(self, ab_test_record: ABTestRecord) -> SQLQuery:
-        query = f"SELECT {config.AB_TEST_ID_FIELD}, {config.AB_TEST_ID_FIELD}, {config.RUN_TIME_FIELD}," \
+        query = f"SELECT {config.AB_TEST_ID_FIELD}, {config.MERCHANT_FIELD}, {config.RUN_TIME_FIELD}," \
                 f" {config.VARIATION_FIELD}, {config.FEED_ID_FIELD}, {config.RUN_ID_FIELD} " \
                 f"FROM {config.AB_TEST_RUNS_TABLE} " \
                 f"WHERE {config.AB_TEST_ID_FIELD}  = '{ab_test_record.fields[airtable.config.TEST_ID_FIELD]}'" \
-                f" AND {config.USER_ID_FIELD} = {os.environ['USER_ID']} " \
+                f" AND {config.MERCHANT_FIELD} = '{ab_test_record.fields[airtable.config.MERCHANT_FIELD]}' " \
                 f"ORDER BY {config.RUN_ID_FIELD} DESC LIMIT 1"
         return query
 
     def _parse_query_result_row_to_ab_test_run(self, result_row: dict) -> ABTestRun:
         ab_test_run = ABTestRun(
             test_id=result_row[config.AB_TEST_ID_FIELD], run_time=result_row[config.RUN_TIME_FIELD],
-            variation=result_row[config.VARIATION_FIELD], run_id=result_row[config.RUN_ID_FIELD],
-            feed_id=result_row[config.FEED_ID_FIELD])
+            variation=result_row[config.VARIATION_FIELD], merchant=result_row[config.MERCHANT_FIELD],
+            run_id=result_row[config.RUN_ID_FIELD], feed_id=result_row[config.FEED_ID_FIELD])
         return ab_test_run
 
     def get_last_run_for_ab_test(self, ab_test_record: ABTestRecord) -> ABTestRun | None:

@@ -31,6 +31,7 @@ class BaseConnectorTestCase(BaseTestCase):
         self.two_days_from_now_str = self.today.replace(day=self.today.day + 2).strftime('%Y-%m-%d')
         self.start_time = '00:00:00'
         self.end_time = '23:59:59'
+        self.merchant = 'test_merchant'
         self.asin_active = 'B01N4J6L3I'
         self.asin_inactive = 'B07JQZQZ4Z'
         self.listing_price1 = 1.0
@@ -44,13 +45,14 @@ class BaseConnectorTestCase(BaseTestCase):
             ImageVariation('PT01', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1B.jpg', 500, 500),
             ImageVariation('PT02', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1C.jpg', 500, 500)]
         self.product_read_today = ProductRead(
-            self.asin_active, self.today, self.image_variations_of_active_asin, self.listing_price1)
+            self.asin_active, self.today, self.image_variations_of_active_asin, self.listing_price1, self.merchant)
         self.product_read_yesterday = ProductRead(
-            self.asin_active, self.two_days_ago_date, self.image_variations2, self.listing_price2)
+            self.asin_active, self.two_days_ago_date, self.image_variations2, self.listing_price2, self.merchant)
         self.product_read_diff = ProductReadDiff(self.product_read_today, self.product_read_yesterday)
         self.ab_test_record1 = ABTestRecord(
             {
                 airtable.config.TEST_ID_FIELD: 1,
+                airtable.config.MERCHANT_FIELD: self.merchant,
                 airtable.config.START_DATE_FIELD: self.two_days_ago_date.strftime(airtable.config.AIRTABLE_TIME_FORMAT),
                 airtable.config.END_DATE_FIELD: self.today.strftime(airtable.config.AIRTABLE_TIME_FORMAT),
                 airtable.config.ROTATION_FIELD: 24,
@@ -66,13 +68,15 @@ class BaseConnectorTestCase(BaseTestCase):
         self.ab_test_record2 = copy.deepcopy(self.ab_test_record1)
         self.ab_test_record2.fields[airtable.config.TEST_ID_FIELD] = 2
         self.ab_test_run1a = ABTestRun(
-            self.ab_test_record1.fields[airtable.config.TEST_ID_FIELD], self.two_days_ago_date, 'A', 1, 1)
+            self.ab_test_record1.fields[airtable.config.TEST_ID_FIELD], self.two_days_ago_date, 'A', self.merchant, 1,
+            1)
         self.ab_test_run1b = ABTestRun(
-            self.ab_test_record1.fields[airtable.config.TEST_ID_FIELD], self.yesterday, 'B', 2, 2)
+            self.ab_test_record1.fields[airtable.config.TEST_ID_FIELD], self.yesterday, 'B', self.merchant, 2, 2)
         self.ab_test_run2a = ABTestRun(
-            self.ab_test_record2.fields[airtable.config.TEST_ID_FIELD], self.two_days_ago_date, 'A', 3, 3)
+            self.ab_test_record2.fields[airtable.config.TEST_ID_FIELD], self.two_days_ago_date, 'A', self.merchant, 3,
+            3)
         self.ab_test_run2b = ABTestRun(
-            self.ab_test_record2.fields[airtable.config.TEST_ID_FIELD], self.yesterday, 'B', 4, 4)
+            self.ab_test_record2.fields[airtable.config.TEST_ID_FIELD], self.yesterday, 'B', self.merchant, 4, 4)
 
     def get_feed_id_by_run_id(self, run_id: int) -> int | None:
         query = f"SELECT {config.FEED_ID_FIELD} FROM {config.AB_TEST_RUNS_TABLE} " \

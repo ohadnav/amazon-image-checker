@@ -4,6 +4,9 @@ from datetime import datetime, timedelta
 from time import strptime
 from typing import Optional
 
+import airtable.config
+from airtable.reader import ABTestRecord
+from amazon_sp_api.amazon_api import ASIN
 from database.database_api import ProductRead, ProductReadDiff
 from notify.slack_notifier import notify
 from scheduler.base_task import BaseTask
@@ -26,14 +29,14 @@ class ProductReadChangesTask(BaseTask):
         return product_read_diff
 
     def task(self):
-        asins_with_active_ab_test = self.airtable_reader.get_asins_of_active_ab_test()
-        for asin in asins_with_active_ab_test:
-            self.process_asin(asin)
+        asins_to_active_ab_test = self.airtable_reader.get_asins_to_active_ab_test()
+        for asin, ab_test_record in asins_to_active_ab_test.items():
+            self.process_asin(asin, ab_test_record)
 
-    def process_asin(self, asin: str):
+    def process_asin(self, asin: ASIN, ab_test_record: ABTestRecord):
         logging.debug('Processing asin {}'.format(asin))
-        last_product_read = self.database_api.get_last_product_read(asin)
-        new_product_read = self.insert_new_product_read(asin)
+        last_product_read = self.database_api.get_last_product_read(asin, ab_test_record)
+        new_product_read = self.insert_new_product_read(asin, ab_test_record)
         if last_product_read:
             product_read_diff = self.is_valid_change(new_product_read, last_product_read)
             if product_read_diff:
@@ -48,11 +51,12 @@ class ProductReadChangesTask(BaseTask):
         self.database_api.insert_product_read_changes(product_read_diff)
         notify(product_read_diff)
 
-    def insert_new_product_read(self, asin: str) -> ProductRead:
+    def insert_new_product_read(self, asin: ASIN, ab_test_record: ABTestRecord) -> ProductRead:
         read_time = datetime.now()
         images = self.amazon_api.get_images(asin)
         listing_price = self.amazon_api.get_listing_price(asin)
-        new_product_read = ProductRead(asin, read_time, images, listing_price)
+        new_product_read = ProductRead(asin, read_time, images, listing_price,
+                                       ab_test_record.fields[airtable.config.MERCHANT_FIELD])
         self.database_api.insert_product_read(new_product_read)
         return new_product_read
 

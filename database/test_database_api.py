@@ -5,18 +5,20 @@ from database.base_connector_test_case import BaseConnectorTestCase
 
 class TestDatabaseApi(BaseConnectorTestCase):
     def test_get_last_product_read_empty_table(self):
-        last_product_read = self.database_api.get_last_product_read(self.asin_active)
+        last_product_read = self.database_api.get_last_product_read(self.asin_active, self.ab_test_record1)
         self.assertEqual(last_product_read, None)
 
     def test_get_last_product_read(self):
         self.database_api.insert_product_read(self.product_read_yesterday)
-        self.assertEqual(self.database_api.get_last_product_read(self.asin_active), self.product_read_yesterday)
+        self.assertEqual(self.database_api.get_last_product_read(self.asin_active, self.ab_test_record1),
+                         self.product_read_yesterday)
         self.database_api.insert_product_read(self.product_read_today)
-        self.assertEqual(self.database_api.get_last_product_read(self.asin_active), self.product_read_today)
+        self.assertEqual(self.database_api.get_last_product_read(self.asin_active, self.ab_test_record1),
+                         self.product_read_today)
 
     def test_insert_product_read_changes(self):
         self.database_api.insert_product_read_changes(self.product_read_diff)
-        changes_from_db = self.database_api.get_last_product_read_changes(self.asin_active)
+        changes_from_db = self.database_api.get_last_product_read_changes(self.asin_active, self.ab_test_record1)
         self.assertEqual(self.product_read_diff, changes_from_db)
 
     def test_update_feed_id(self):
