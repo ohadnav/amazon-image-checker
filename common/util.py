@@ -13,10 +13,16 @@ def set_default_logging_config():
         format=LOGGING_FORMAT, level=logging.INFO if sys.gettrace() else logging.WARNING, stream=sys.stderr)
 
 
+run_log_init_once = False
+
+
 def initialize_debug_logging():
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-    set_logging_stream_to_stdout(logger)
+    global run_log_init_once
+    if not run_log_init_once:
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        set_logging_stream_to_stdout(logger)
+    run_log_init_once = True
 
 
 def set_logging_stream_to_stdout(logger: logging.Logger):

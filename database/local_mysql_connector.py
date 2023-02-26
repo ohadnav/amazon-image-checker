@@ -1,28 +1,19 @@
 from __future__ import annotations
 
-import os
-
 from database import config
 from database.mysql_connector import MySQLConnector
 
 
 class LocalMySQLConnector(MySQLConnector):
     def __init__(self):
-        self.set_test_environment_variables()
-        super().__init__()
+        super(LocalMySQLConnector, self).__init__()
         self.drop_test_database()
         self.create_test_database_if_not_exists()
         self.create_test_tables()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        super().__exit__(exc_type, exc_val, exc_tb)
-        self.drop_test_tables()
-        self.drop_test_database()
-
-    def set_test_environment_variables(self):
-        os.environ['DB_HOST'] = 'localhost'
-        os.environ['DB_DATABASE'] = 'test_database'
-        os.environ['USER_ID'] = '1'
+        self.kill_all()
+        super(LocalMySQLConnector, self).__exit__(exc_type, exc_val, exc_tb)
 
     def create_product_read_table_query(self, table_name: str) -> str:
         return f'CREATE TABLE IF NOT EXISTS {table_name} ' \

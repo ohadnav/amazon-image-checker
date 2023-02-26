@@ -11,8 +11,7 @@ import airtable.config
 from airtable.reader import ABTestRecord, AirtableReader
 from amazon_sp_api.amazon_api import ImageVariation
 from database import config
-from database.base_connector import BaseConnector
-from database.mysql_connector import SQLQuery
+from database.base_connector import BaseConnector, SQLQuery
 
 
 @dataclass
@@ -89,9 +88,9 @@ class DatabaseApi:
     def _insert_product_read_query(self, product_read: ProductRead, table_name: str):
         # convert image_variations from list to str matching the format in the database
         image_variations_json = self._prepare_json_to_sql_insert_query(product_read)
-        query = f'INSERT INTO `{table_name}` ' \
-                f'(`{config.ASIN_FIELD}`, `{config.IMAGE_VARIATIONS_FIELD}`, `{config.READ_TIME_FIELD}`, ' \
-                f'`{config.LISTING_PRICE_FIELD}`, `{config.USER_ID_FIELD}`) ' \
+        query = f'INSERT INTO {table_name} ' \
+                f'({config.ASIN_FIELD}, {config.IMAGE_VARIATIONS_FIELD}, {config.READ_TIME_FIELD}, ' \
+                f'{config.LISTING_PRICE_FIELD}, {config.USER_ID_FIELD}) ' \
                 f'VALUES ("{product_read.asin}", "{image_variations_json}", "{product_read.read_time}", ' \
                 f'{product_read.listing_price}, {os.environ["USER_ID"]})'
         return query
@@ -114,15 +113,15 @@ class DatabaseApi:
         return None
 
     def _insert_ab_test_run_query(self, ab_test_run: ABTestRun) -> SQLQuery:
-        query = f'INSERT INTO `{config.AB_TEST_RUNS_TABLE}` ' \
-                f'(`{config.AB_TEST_ID_FIELD}`, `{config.RUN_TIME_FIELD}`, `{config.VARIATION_FIELD}`, ' \
-                f'`{config.USER_ID_FIELD}`) ' \
+        query = f'INSERT INTO {config.AB_TEST_RUNS_TABLE} ' \
+                f'({config.AB_TEST_ID_FIELD}, {config.RUN_TIME_FIELD}, {config.VARIATION_FIELD}, ' \
+                f'{config.USER_ID_FIELD}) ' \
                 f'VALUES ("{ab_test_run.test_id}", "{ab_test_run.run_time}", "{ab_test_run.variation}", ' \
                 f'{os.environ["USER_ID"]})'
         return query
 
     def _get_inserted_ab_test_run_id_query(self, ab_test_run: ABTestRun) -> SQLQuery:
-        query = f'SELECT `{config.RUN_ID_FIELD}` FROM `{config.AB_TEST_RUNS_TABLE}` ' \
+        query = f'SELECT {config.RUN_ID_FIELD} FROM {config.AB_TEST_RUNS_TABLE} ' \
                 f'WHERE {config.AB_TEST_ID_FIELD} = "{ab_test_run.test_id}" ' \
                 f'ORDER BY {config.RUN_ID_FIELD} DESC LIMIT 1 '
         return query
