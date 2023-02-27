@@ -1,6 +1,5 @@
 import logging
 import os
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Mapping
 
@@ -8,22 +7,13 @@ import pandas as pd
 from pyairtable import Table
 
 from airtable import config
-from amazon_sp_api.amazon_api import ASIN
-
-ABTestId = int
-
-
-@dataclass
-class ABTestRecord:
-    fields: dict
+from airtable.ab_test_record import ABTestRecord, ABTestId
+from database.data_model import ASIN
 
 
 class AirtableReader():
     def __init__(self):
         self.table = Table(os.environ['AIRTABLE_API_KEY'], os.environ['AIRTABLE_BASE_ID'], os.environ['AIRTABLE_TABLE'])
-
-    def _get_raw_record_id(self, record: dict) -> ABTestId:
-        return self._get_raw_record_fields(record)[config.TEST_ID_FIELD]
 
     def get_active_ab_test_records(self) -> Mapping[ABTestId, ABTestRecord]:
         active_ab_test_formula = AirtableReader._active_ab_test_formula()
@@ -36,33 +26,12 @@ class AirtableReader():
             f'{", ".join([str(test_id) for test_id in test_id_to_records.keys()])}')
         return test_id_to_records
 
-    @staticmethod
-    def _parse_start_date(record: ABTestRecord) -> datetime:
-        return datetime.strptime(record.fields[config.START_DATE_FIELD], config.AIRTABLE_TIME_FORMAT)
 
-    @staticmethod
-    def current_variation(record: ABTestRecord) -> str:
-        hours_diff = AirtableReader._calculate_hours_since_start(record)
-        rotations = int(hours_diff / record.fields[config.ROTATION_FIELD])
-        return 'B' if rotations % 2 else 'A'
-
-    @staticmethod
-    def _calculate_hours_since_start(record: ABTestRecord) -> float:
-        return (datetime.now() - AirtableReader._parse_start_date(record)).total_seconds() / 3600
-
-    @staticmethod
-    def get_flatfile_for_record(record: ABTestRecord) -> dict:
-        flatfile = record.fields[config.FLATFILE_FIELD[AirtableReader.current_variation(record)]][0]
-        return flatfile
-
-    @staticmethod
-    def get_flatfile_url_for_record(record: ABTestRecord) -> dict:
-        return AirtableReader.get_flatfile_for_record(record)['url']
 
     def get_asins_to_active_ab_test(self) -> Mapping[ASIN, ABTestRecord]:
         asin_to_ab_test_records = {}
         for ab_test_record in self.get_active_ab_test_records().values():
-            flatfile_url = self.get_flatfile_url_for_record(ab_test_record)
+            flatfile_url = ab_test_record.get_flatfile_url_for_record()
             ab_test_df = pd.read_excel(flatfile_url, sheet_name=config.FLATFILE_SHEET_NAME, skiprows=[0, 2]).dropna(
                 how='all')
             ab_test_asins = ab_test_df[config.FLATFILE_ASIN_COLUMN].dropna().tolist()
@@ -82,3 +51,6 @@ class AirtableReader():
         active_status_formula = f'{{{config.STATUS_FIELD}}} = \"Active\"'
         final_formula = f'AND({between_dates_formula},{active_status_formula})'
         return final_formula
+
+    def _get_raw_record_id(self, record: dict) -> ABTestId:
+        return self._get_raw_record_fields(record)[config.TEST_ID_FIELD]

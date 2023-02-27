@@ -11,7 +11,7 @@ class BaseTask:
     def __init__(self):
         self.database_api = DatabaseApi(PostgresConnector())
         self.airtable_reader = AirtableReader()
-        self.amazon_api = AmazonApi()
+        self.amazon_api = AmazonApi(self.database_api)
 
     def task(self):
         pass

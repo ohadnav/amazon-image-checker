@@ -5,11 +5,11 @@ import os
 from datetime import datetime, timedelta
 
 import airtable.config
-from airtable.reader import ABTestRecord
-from amazon_sp_api.amazon_api import ImageVariation
+from airtable.ab_test_record import ABTestRecord
 from common.test_util import BaseTestCase, TEST_FLATFILE_A, TEST_FLATFILE_B
 from database import config
-from database.database_api import DatabaseApi, ProductRead, ProductReadDiff, ABTestRun
+from database.data_model import ImageVariation, ProductRead, ABTestRun, ProductReadDiff, CredentialsSPApi
+from database.database_api import DatabaseApi
 from database.local_postgres_connector import LocalPostgresConnector
 
 
@@ -28,10 +28,10 @@ class BaseConnectorTestCase(BaseTestCase):
         self.yesterday = self.today - timedelta(days=1)
         self.two_days_ago_date = self.today - timedelta(days=2)
         self.two_days_ago_str = self.two_days_ago_date.strftime('%Y-%m-%d')
-        self.two_days_from_now_str = self.today.replace(day=self.today.day + 2).strftime('%Y-%m-%d')
+        self.two_days_from_now_str = (self.today + timedelta(days=2)).strftime('%Y-%m-%d')
         self.start_time = '00:00:00'
         self.end_time = '23:59:59'
-        self.merchant = 'test_merchant'
+        self.merchant = 'Thunderfit'
         self.asin_active = 'B01N4J6L3I'
         self.asin_inactive = 'B07JQZQZ4Z'
         self.listing_price1 = 1.0
@@ -85,3 +85,12 @@ class BaseConnectorTestCase(BaseTestCase):
         if result:
             return result[0][config.FEED_ID_FIELD]
         return None
+
+    def insert_credentials(self):
+        self.database_api.insert_credentials(
+            self.merchant, CredentialsSPApi(lwa_app_id=os.environ['LWA_APP_ID_TEST'],
+                                            lwa_client_secret=os.environ['LWA_CLIENT_SECRET_TEST'],
+                                            sp_api_secret_key=os.environ['SP_API_SECRET_KEY_TEST'],
+                                            sp_api_role_arn=os.environ['SP_API_ROLE_ARN_TEST'],
+                                            sp_api_access_key=os.environ['SP_API_ACCESS_KEY_TEST'],
+                                            sp_api_refresh_token=os.environ['SP_API_REFRESH_TOKEN_TEST']))

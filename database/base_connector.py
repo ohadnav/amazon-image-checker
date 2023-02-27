@@ -4,7 +4,7 @@ import logging
 from abc import abstractmethod
 from typing import Any
 
-SQLQuery = str
+from database.data_model import SQLQuery
 
 
 class BaseConnector:

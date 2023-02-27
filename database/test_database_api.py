@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from database.base_connector_test_case import BaseConnectorTestCase
+from database.data_model import CredentialsSPApi
 
 
 class TestDatabaseApi(BaseConnectorTestCase):
@@ -47,3 +48,14 @@ class TestDatabaseApi(BaseConnectorTestCase):
     def get_last_run_for_ab_test_no_runs(self):
         self.database_api.insert_ab_test_run(self.ab_test_run1a)
         self.assertEqual(self.database_api.get_last_run_for_ab_test(self.ab_test_record2), None)
+
+    def test_get_credentials_from_merchant(self):
+        merchant2 = self.merchant + '2'
+        credetials_lwa1 = CredentialsSPApi('app_id1', 'client_secret1', 'access_key1', 'refresh1', 'sp_api_secret1',
+                                           'arn1')
+        credetials_lwa2 = CredentialsSPApi('app_id2', 'client_secret2', 'access_key2', 'refresh2', 'sp_api_secret2',
+                                           'arn2')
+        self.database_api.insert_credentials(self.merchant, credetials_lwa1)
+        self.database_api.insert_credentials(merchant2, credetials_lwa2)
+        actual_credentials = self.database_api.get_credentials_from_merchant(self.merchant)
+        self.assertEqual(actual_credentials, credetials_lwa1)

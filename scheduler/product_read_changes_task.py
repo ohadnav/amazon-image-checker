@@ -5,9 +5,8 @@ from time import strptime
 from typing import Optional
 
 import airtable.config
-from airtable.reader import ABTestRecord
-from amazon_sp_api.amazon_api import ASIN
-from database.database_api import ProductRead, ProductReadDiff
+from airtable.ab_test_record import ABTestRecord
+from database.data_model import ASIN, ProductRead, ProductReadDiff
 from notify.slack_notifier import notify
 from scheduler.base_task import BaseTask
 
@@ -53,8 +52,8 @@ class ProductReadChangesTask(BaseTask):
 
     def insert_new_product_read(self, asin: ASIN, ab_test_record: ABTestRecord) -> ProductRead:
         read_time = datetime.now()
-        images = self.amazon_api.get_images(asin)
-        listing_price = self.amazon_api.get_listing_price(asin)
+        images = self.amazon_api.get_images(asin, ab_test_record)
+        listing_price = self.amazon_api.get_listing_price(asin, ab_test_record)
         new_product_read = ProductRead(asin, read_time, images, listing_price,
                                        ab_test_record.fields[airtable.config.MERCHANT_FIELD])
         self.database_api.insert_product_read(new_product_read)

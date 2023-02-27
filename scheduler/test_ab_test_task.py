@@ -1,5 +1,5 @@
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from freezegun import freeze_time
 from pytz import timezone
@@ -21,20 +21,19 @@ class ABTestTaskTestCase(BaseConnectorTestCase):
         self.ab_test_task.amazon_api = MagicMock()
         self.ab_test_task.airtable_reader = MagicMock()
 
-    @patch('airtable.reader.AirtableReader.current_variation', autospec=True)
-    def test_should_not_run_ab_test(self, current_variation_mock):
+    def test_should_not_run_ab_test(self):
         self.ab_test_task.database_api.get_last_run_for_ab_test = MagicMock(return_value=None)
-        current_variation_mock.return_value = 'A'
+        self.ab_test_record1.current_variation = MagicMock(return_value='A')
         self.assertFalse(self.ab_test_task.should_run_ab_test(self.ab_test_record1))
 
-        current_variation_mock.return_value = 'B'
+        self.ab_test_record1.current_variation = MagicMock(return_value='B')
         self.assertTrue(self.ab_test_task.should_run_ab_test(self.ab_test_record1))
 
-        current_variation_mock.return_value = 'A'
+        self.ab_test_record1.current_variation = MagicMock(return_value='A')
         self.ab_test_task.database_api.get_last_run_for_ab_test.return_value = self.ab_test_run1a
         self.assertFalse(self.ab_test_task.should_run_ab_test(self.ab_test_record1))
 
-        current_variation_mock.return_value = self.ab_test_run1b.variation
+        self.ab_test_record1.current_variation = MagicMock(return_value='B')
         self.assertTrue(self.ab_test_task.should_run_ab_test(self.ab_test_record1))
 
     def test_task(self):
@@ -57,6 +56,7 @@ class ABTestTaskTestCase(BaseConnectorTestCase):
     def test_task_integration(self):
         self.ab_test_task = ABTestTask()
         self.ab_test_task.database_api = DatabaseApi(LocalPostgresConnector())
+        self.insert_credentials()
         self.ab_test_task.should_run_ab_test = MagicMock(return_value=True)
         with freeze_time(
                 datetime.strptime('2023-01-16 00:01', airtable.config.PYTHON_TIME_FORMAT).astimezone(

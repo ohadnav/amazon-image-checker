@@ -1,69 +1,22 @@
 from __future__ import annotations
 
 import copy
-from dataclasses import dataclass, asdict
-from datetime import datetime
-from typing import List, Optional
+from dataclasses import asdict
 
 import airtable.config
-from airtable.reader import ABTestRecord, AirtableReader
-from amazon_sp_api.amazon_api import ImageVariation, ASIN
+from airtable.ab_test_record import ABTestRecord
 from database import config
-from database.base_connector import BaseConnector, SQLQuery
-
-
-@dataclass
-class ProductRead:
-    asin: ASIN
-    read_time: datetime
-    image_variations: List[ImageVariation]
-    listing_price: Optional[float]
-    merchant: str
-
-
-@dataclass
-class ABTestRun:
-    test_id: int
-    run_time: datetime
-    variation: str
-    merchant: str
-    run_id: int = None
-    feed_id: int = None
-
-    @staticmethod
-    def from_record(ab_test_record: ABTestRecord):
-        return ABTestRun(
-            test_id=ab_test_record.fields[airtable.config.TEST_ID_FIELD], run_time=datetime.now(),
-            variation=AirtableReader.current_variation(ab_test_record),
-            merchant=ab_test_record.fields[airtable.config.MERCHANT_FIELD])
-
-
-@dataclass
-class ProductReadDiff(ProductRead):
-    def __init__(self, current: ProductRead, last: ProductRead | None = None):
-        if last:
-            assert current.asin == last.asin and current.read_time > last.read_time
-        self.asin = current.asin
-        self.read_time = current.read_time
-        self.merchant = current.merchant
-        self.image_variations = ProductReadDiff._calculate_variants_with_diff(
-            current, last) if last else current.image_variations
-        self.listing_price = current.listing_price if not last or current.listing_price != \
-                                                      last.listing_price else None
-
-    @staticmethod
-    def _calculate_variants_with_diff(current: ProductRead, last: ProductRead) -> List[ImageVariation]:
-        return [variant for variant in current.image_variations if variant not in last.image_variations]
-
-    def has_diff(self) -> bool:
-        return bool(self.image_variations) or bool(self.listing_price)
+from database.base_connector import BaseConnector
+from database.data_model import SQLQuery, ASIN, ImageVariation, ProductRead, CredentialsSPApi, ABTestRun, \
+    ProductReadDiff
 
 
 class DatabaseApi:
     def __init__(self, connector: BaseConnector):
         self.connector = connector
 
-    def _last_product_read_query(self, asin: ASIN, ab_test_record: ABTestRecord, table_name: str) -> SQLQuery:
+    @staticmethod
+    def _last_product_read_query(asin: ASIN, ab_test_record: ABTestRecord, table_name: str) -> SQLQuery:
         query = f"SELECT {config.IMAGE_VARIATIONS_FIELD}, {config.ASIN_FIELD}, {config.READ_TIME_FIELD}, " \
                 f"{config.LISTING_PRICE_FIELD}, {config.MERCHANT_FIELD} " \
                 f"FROM {table_name} " \
@@ -75,13 +28,14 @@ class DatabaseApi:
     def get_last_product_read(self, asin: ASIN, ab_test_record: ABTestRecord,
                               table_name: str = None) -> ProductRead | None:
         table_name = table_name if table_name else config.PRODUCT_READ_HISTORY_TABLE
-        results = self.connector.run_query(self._last_product_read_query(asin, ab_test_record, table_name))
+        results = self.connector.run_query(DatabaseApi._last_product_read_query(asin, ab_test_record, table_name))
         if results:
-            last_product_read = self._parse_query_result_row_to_product_read(results[0])
+            last_product_read = DatabaseApi._parse_query_result_row_to_product_read(results[0])
             return last_product_read
         return None
 
-    def _parse_query_result_row_to_product_read(self, result_row: dict) -> ProductRead:
+    @staticmethod
+    def _parse_query_result_row_to_product_read(result_row: dict) -> ProductRead:
         image_variations_list = [ImageVariation(**image_variation) for image_variation in
                                  result_row[config.IMAGE_VARIATIONS_FIELD]]
         product_read = ProductRead(
@@ -90,9 +44,10 @@ class DatabaseApi:
             merchant=result_row[config.MERCHANT_FIELD])
         return product_read
 
-    def _insert_product_read_query(self, product_read: ProductRead, table_name: str):
+    @staticmethod
+    def _insert_product_read_query(product_read: ProductRead, table_name: str):
         # convert image_variations from list to str matching the format in the database
-        image_variations_json = self._prepare_json_to_sql_insert_query(product_read)
+        image_variations_json = DatabaseApi._prepare_json_to_sql_insert_query(product_read)
         query = f"INSERT INTO {table_name} " \
                 f"({config.ASIN_FIELD}, {config.IMAGE_VARIATIONS_FIELD}, {config.READ_TIME_FIELD}, " \
                 f"{config.LISTING_PRICE_FIELD}, {config.MERCHANT_FIELD}) " \
@@ -100,12 +55,13 @@ class DatabaseApi:
                 f"{product_read.listing_price}, '{product_read.merchant}')"
         return query
 
-    def _prepare_json_to_sql_insert_query(self, product_read: ProductRead) -> SQLQuery:
+    @staticmethod
+    def _prepare_json_to_sql_insert_query(product_read: ProductRead) -> SQLQuery:
         return str(asdict(product_read)['image_variations']).replace("'", '"')
 
     def insert_product_read(self, product_read: ProductRead, table_name: str = None):
         table_name = table_name or config.PRODUCT_READ_HISTORY_TABLE
-        self.connector.run_query(self._insert_product_read_query(product_read, table_name))
+        self.connector.run_query(DatabaseApi._insert_product_read_query(product_read, table_name))
 
     def insert_product_read_changes(self, product_read_diff: ProductReadDiff):
         assert product_read_diff.has_diff()
@@ -173,3 +129,37 @@ class DatabaseApi:
 
     def update_feed_id(self, ab_test_run: ABTestRun):
         self.connector.run_query(self._update_feed_id_query(ab_test_run))
+
+    def _credentials_from_merchant_query(self, merchant: str) -> SQLQuery:
+        query = f"SELECT {config.LWA_APP_ID_FIELD}, {config.LWA_CLIENT_SECRET_FIELD}, " \
+                f"{config.SP_API_SECRET_KEY_FIELD}, {config.SP_API_ROLE_ARN_FIELD}, " \
+                f"{config.SP_API_ACCESS_KEY_FIELD}, {config.SP_API_REFRESH_TOKEN_FIELD} " \
+                f"FROM {config.MERCHANTS_TABLE} " \
+                f"WHERE {config.MERCHANT_FIELD} = '{merchant}'"
+        return query
+
+    def _parse_credentials_lwa(self, result_row: dict) -> CredentialsSPApi:
+        return CredentialsSPApi(lwa_app_id=result_row[config.LWA_APP_ID_FIELD],
+                                lwa_client_secret=result_row[config.LWA_CLIENT_SECRET_FIELD],
+                                sp_api_secret_key=result_row[config.SP_API_SECRET_KEY_FIELD],
+                                sp_api_role_arn=result_row[config.SP_API_ROLE_ARN_FIELD],
+                                sp_api_access_key=result_row[config.SP_API_ACCESS_KEY_FIELD],
+                                sp_api_refresh_token=result_row[config.SP_API_REFRESH_TOKEN_FIELD])
+
+    @staticmethod
+    def _insert_credentials_query(merchant: str, credentials_lwa: CredentialsSPApi) -> str:
+        query = f"INSERT INTO {config.MERCHANTS_TABLE} " \
+                f"({config.LWA_APP_ID_FIELD}, {config.LWA_CLIENT_SECRET_FIELD}, {config.SP_API_SECRET_KEY_FIELD}, " \
+                f"{config.SP_API_ROLE_ARN_FIELD}, {config.SP_API_ACCESS_KEY_FIELD}, " \
+                f"{config.SP_API_REFRESH_TOKEN_FIELD}, {config.MERCHANT_FIELD}) " \
+                f"VALUES ('{credentials_lwa.lwa_app_id}', '{credentials_lwa.lwa_client_secret}', " \
+                f"'{credentials_lwa.sp_api_secret_key}', '{credentials_lwa.sp_api_role_arn}', " \
+                f"'{credentials_lwa.sp_api_access_key}', '{credentials_lwa.sp_api_refresh_token}', '{merchant}')"
+        return query
+
+    def insert_credentials(self, merchant: str, credentials_sp_api: CredentialsSPApi):
+        self.connector.run_query(DatabaseApi._insert_credentials_query(merchant, credentials_sp_api))
+
+    def get_credentials_from_merchant(self, merchant: str) -> CredentialsSPApi:
+        results = self.connector.run_query(self._credentials_from_merchant_query(merchant))
+        return self._parse_credentials_lwa(results[0])

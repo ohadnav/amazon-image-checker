@@ -1,12 +1,12 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from unittest.mock import MagicMock
 
 from freezegun import freeze_time
 from pytz import timezone
 
 from airtable import config
-from airtable.reader import AirtableReader, ABTestRecord
+from airtable.reader import AirtableReader
 from common import test_util
 from common.test_util import BaseTestCase
 
@@ -25,36 +25,10 @@ class BaseAirtableReaderTestCase(BaseTestCase):
         self.assertEqual(len(active_ab_tests), 1)
         self.assertEqual(active_ab_tests[ACTIVE_TEST_ID].fields[config.TEST_ID_FIELD], ACTIVE_TEST_ID)
 
-    def test_calculate_variation(self):
-        self.assertEqual(
-            AirtableReader.current_variation(
-                ABTestRecord(
-                    {
-                        config.ROTATION_FIELD: 24,
-                        config.START_DATE_FIELD: datetime.strftime(
-                            datetime.now() + timedelta(hours=23), config.AIRTABLE_TIME_FORMAT)})),
-            'A')
-        self.assertEqual(
-            AirtableReader.current_variation(
-                ABTestRecord(
-                    {
-                        config.ROTATION_FIELD: 12,
-                        config.START_DATE_FIELD: datetime.strftime(
-                            datetime.now() + timedelta(hours=23), config.AIRTABLE_TIME_FORMAT)})),
-            'B')
-        self.assertEqual(
-            AirtableReader.current_variation(
-                ABTestRecord(
-                    {
-                        config.ROTATION_FIELD: 24,
-                        config.START_DATE_FIELD: datetime.strftime(
-                            datetime.now() + timedelta(hours=25), config.AIRTABLE_TIME_FORMAT)})),
-            'B')
-
     def test_get_flatfile_for_record(self):
         record = self.airtable_reader.get_active_ab_test_records()[ACTIVE_TEST_ID]
         AirtableReader.current_variation = MagicMock(return_value='A')
-        flatfile_for_record = AirtableReader.get_flatfile_for_record(record)
+        flatfile_for_record = record.get_flatfile_for_record()
         self.assertEqual(os.path.basename(test_util.TEST_FLATFILE_A), flatfile_for_record['filename'])
 
     def test_get_asins_with_active_ab_test(self):

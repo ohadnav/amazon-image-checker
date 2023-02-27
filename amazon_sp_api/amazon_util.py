@@ -1,15 +1,20 @@
-import re
+from __future__ import annotations
 
-from amazon_sp_api.amazon_api import ASIN
+import airtable.config
+from airtable.ab_test_record import ABTestRecord
+from database.data_model import ASIN, ABTestRun
 
 
-class AmazonUtil():
-    @staticmethod
-    def extract_asin_from_url(url: str) -> str:
-        asin = re.search(r'/dp/(.*)/?', url).group(1)
-        return asin
+class AmazonUtil:
 
     @staticmethod
     def get_url_from_asin(asin: ASIN) -> str:
         url = 'https://www.amazon.com/dp/' + asin
         return url
+
+    @staticmethod
+    def extract_merchant(ab_test_record: ABTestRecord | None, ab_test_run: ABTestRun | None) -> str:
+        if ab_test_record:
+            return ab_test_record.fields[airtable.config.MERCHANT_FIELD]
+        elif ab_test_run:
+            return ab_test_run.merchant
