@@ -35,17 +35,22 @@ class AmazonApi:
         for image in images_response:
             images.append(ImageVariation(image['variant'], image['link'], image['height'], image['width']))
         image_variations = [from_dict(ImageVariation, image) for image in images_response]
-        unique_image_variations = set([image_variation.variant for image_variation in image_variations])
+        unique_image_variations = sorted(list(set([image_variation.variant for image_variation in image_variations])))
         logging.debug(f'Got {unique_image_variations} images for asin: {asin}')
         return image_variations
 
     @throttle_retry()
-    def get_listing_price(self, asin: ASIN, ab_test_record: ABTestRecord) -> float:
+    def get_listing_price(self, asin: ASIN, ab_test_record: ABTestRecord) -> float | None:
         logging.debug(f'Getting price for asin: {asin}')
         self.init_credentials(ab_test_record=ab_test_record)
         response = Products(credentials=self.current_credentials).get_competitive_pricing_for_asins([asin])
-        return response.payload[0]['Product']['CompetitivePricing']['CompetitivePrices'][0]['Price']['ListingPrice'][
-            'Amount']
+        logging.debug(f'Payload for {asin} competitive pricing: {response.payload[0]["Product"]["CompetitivePricing"]}')
+        try:
+            return \
+                response.payload[0]['Product']['CompetitivePricing']['CompetitivePrices'][0]['Price']['ListingPrice'][
+                    'Amount']
+        except IndexError:
+            return None
 
     @throttle_retry()
     def post_feed(self, feed_url: str, ab_test_run: ABTestRun) -> int:
@@ -61,6 +66,7 @@ class AmazonApi:
             raise e
         finally:
             os.remove(temp_file_path)
+        logging.debug(f'Payload for feed {feed_url} is {response[1].payload}')
         payload_feed_id = int(response[1].payload['feedId'])
         logging.debug(f'Got feed_id: {payload_feed_id}')
         return payload_feed_id

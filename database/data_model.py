@@ -71,8 +71,10 @@ class ProductReadDiff(ProductRead):
         self.merchant = current.merchant
         self.image_variations = ProductReadDiff._calculate_variants_with_diff(
             current, last) if last else current.image_variations
-        self.listing_price = current.listing_price if not last or current.listing_price != \
-                                                      last.listing_price else None
+        if last and last.listing_price and current.listing_price and current.listing_price != last.listing_price:
+            self.listing_price = current.listing_price
+        else:
+            self.listing_price = None
 
     @staticmethod
     def _calculate_variants_with_diff(current: ProductRead, last: ProductRead) -> List[ImageVariation]:

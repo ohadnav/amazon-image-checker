@@ -25,3 +25,4 @@ class TestAmazonApi(BaseConnectorTestCase):
 
     def test_get_listing_price(self):
         self.assertAlmostEqual(self.amazon_api.get_listing_price(TEST_ASIN, self.ab_test_record1), TEST_PRICE)
+        self.assertIsNone(self.amazon_api.get_listing_price('BBBBBBBBB', self.ab_test_record1))

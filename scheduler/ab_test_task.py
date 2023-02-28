@@ -1,6 +1,7 @@
 import logging
 
 from airtable.ab_test_record import ABTestRecord
+from common import util
 from database.data_model import ABTestRun
 from scheduler.base_task import BaseTask
 
@@ -30,4 +31,5 @@ class ABTestTask(BaseTask):
 
 
 if __name__ == '__main__':
+    util.initialize_debug_logging()
     ABTestTask().run()

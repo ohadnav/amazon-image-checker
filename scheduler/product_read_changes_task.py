@@ -6,6 +6,7 @@ from typing import Optional
 
 import airtable.config
 from airtable.ab_test_record import ABTestRecord
+from common import util
 from database.data_model import ASIN, ProductRead, ProductReadDiff
 from notify.slack_notifier import notify
 from scheduler.base_task import BaseTask
@@ -61,4 +62,5 @@ class ProductReadChangesTask(BaseTask):
 
 
 if __name__ == '__main__':
+    util.initialize_debug_logging()
     ProductReadChangesTask().run()

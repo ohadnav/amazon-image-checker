@@ -161,5 +161,5 @@ class DatabaseApi:
         self.connector.run_query(DatabaseApi._insert_credentials_query(merchant, credentials_sp_api))
 
     def get_credentials_from_merchant(self, merchant: str) -> CredentialsSPApi:
-        results = self.connector.run_query(self._credentials_from_merchant_query(merchant))
+        results = self.connector.run_query(self._credentials_from_merchant_query(merchant), verbose=False)
         return self._parse_credentials_lwa(results[0])

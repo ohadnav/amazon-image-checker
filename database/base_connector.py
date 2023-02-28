@@ -18,11 +18,12 @@ class BaseConnector:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close_connection()
 
-    def run_query(self, query: SQLQuery) -> list[Any]:
+    def run_query(self, query: SQLQuery, verbose: bool = True) -> list[Any]:
         results = []
         try:
             self.connect()
-            logging.info(f'running query: {query}')
+            if verbose:
+                logging.info(f'running query: {query}')
             self.cursor.execute(query)
             self.connection.commit()
             if self.should_fetch(query):
@@ -33,7 +34,8 @@ class BaseConnector:
         finally:
             if self.is_connected():
                 self.close_connection()
-            logging.debug(f'got results {results} for {query}')
+            if verbose:
+                logging.debug(f'got results {results} for {query}')
             return results
 
     def should_fetch(self, query: SQLQuery) -> bool:
