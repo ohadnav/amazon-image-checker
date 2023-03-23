@@ -60,7 +60,7 @@ class AmazonApi:
         response = Products(credentials=self.current_credentials).get_competitive_pricing_for_asins([asin])
         try:
             logging.debug(
-                f'Payload for {asin} pricing (for inactive check): '
+                f'Payload for {asin} pricing (for is active check): '
                 f'{response.payload[0]["Product"]["CompetitivePricing"]["CompetitivePrices"]}')
             return len(response.payload[0]['Product']['CompetitivePricing']['CompetitivePrices']) > 0
         except (KeyError, IndexError):

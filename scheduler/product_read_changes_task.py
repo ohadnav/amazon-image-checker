@@ -47,7 +47,8 @@ class ProductReadChangesTask(BaseTask):
         logging.info(
             f'Found product read changes for asin {product_read_diff.asin}'
             f'{" in images " if images_changed else ""}{", ".join(images_changed)}'
-            f'{" in listing price " + str(product_read_diff.listing_price) if product_read_diff.listing_price else ""}')
+            f'{" in listing price " + str(product_read_diff.listing_price) if product_read_diff.listing_price else ""}'
+            f'{" in is_active " + str(product_read_diff.is_active) if product_read_diff.is_active is not None else ""}')
         self.database_api.insert_product_read_changes(product_read_diff)
         notify(product_read_diff)
 
@@ -55,8 +56,10 @@ class ProductReadChangesTask(BaseTask):
         read_time = datetime.now()
         images = self.amazon_api.get_images(asin, ab_test_record)
         listing_price = self.amazon_api.get_listing_price(asin, ab_test_record)
-        new_product_read = ProductRead(asin, read_time, images, listing_price,
-                                       ab_test_record.fields[airtable.config.MERCHANT_FIELD])
+        is_active = self.amazon_api.is_active(asin, ab_test_record)
+        new_product_read = ProductRead(
+            asin, read_time, images, listing_price,
+            ab_test_record.fields[airtable.config.MERCHANT_FIELD], is_active)
         self.database_api.insert_product_read(new_product_read)
         return new_product_read
 

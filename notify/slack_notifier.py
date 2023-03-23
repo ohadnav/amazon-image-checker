@@ -26,6 +26,8 @@ def create_message_for_product_read_changes(product_read_diff: ProductReadDiff) 
         change_message += f' changed image variations {", ".join(variations_with_diff)}'
     if product_read_diff.listing_price:
         change_message += f' listing price changed to {product_read_diff.listing_price}'
+    if product_read_diff.is_active is not None:
+        change_message += f' status changed to {"ACTIVE" if product_read_diff.is_active else "INACTIVE"}'
     return change_message
 
 

@@ -32,7 +32,7 @@ class ProductRead:
     image_variations: List[ImageVariation]
     listing_price: Optional[float]
     merchant: str
-    is_active: Optional[bool] = None
+    is_active: Optional[bool]
 
 
 @dataclass
