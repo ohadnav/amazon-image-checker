@@ -36,6 +36,13 @@ class TestDatabaseApi(BaseConnectorTestCase):
         self.assertListEqual(changes_from_db.image_variations, [])
         self.assertEqual(self.product_read_diff, changes_from_db)
 
+    def test_insert_product_read_changes_missing_in_active(self):
+        self.product_read_diff.is_active = None
+        self.database_api.insert_product_read_changes(self.product_read_diff)
+        changes_from_db = self.database_api.get_last_product_read_changes(self.asin_active, self.ab_test_record1)
+        self.assertIsNone(changes_from_db.is_active)
+        self.assertEqual(self.product_read_diff, changes_from_db)
+
     def test_update_feed_id(self):
         self.database_api.insert_ab_test_run(self.ab_test_run1a)
         self.assertIsNone(self.database_api.get_last_run_for_ab_test(self.ab_test_record1).feed_id)

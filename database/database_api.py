@@ -18,7 +18,7 @@ class DatabaseApi:
     @staticmethod
     def _last_product_read_query(asin: ASIN, ab_test_record: ABTestRecord, table_name: str) -> SQLQuery:
         query = f"SELECT {config.IMAGE_VARIATIONS_FIELD}, {config.ASIN_FIELD}, {config.READ_TIME_FIELD}, " \
-                f"{config.LISTING_PRICE_FIELD}, {config.MERCHANT_FIELD} " \
+                f"{config.LISTING_PRICE_FIELD}, {config.IS_ACTIVE_FIELD}, {config.MERCHANT_FIELD} " \
                 f"FROM {table_name} " \
                 f"WHERE {config.ASIN_FIELD}  = '{asin}' AND " \
                 f"{config.MERCHANT_FIELD} = '{ab_test_record.fields[airtable.config.MERCHANT_FIELD]}' " \
@@ -43,10 +43,11 @@ class DatabaseApi:
         else:
             image_variations_list = []
         listing_price = result_row[config.LISTING_PRICE_FIELD] if config.LISTING_PRICE_FIELD in result_row else None
+        is_active = result_row[config.IS_ACTIVE_FIELD] if config.IS_ACTIVE_FIELD in result_row else None
         product_read = ProductRead(
             asin=result_row[config.ASIN_FIELD], read_time=result_row[config.READ_TIME_FIELD],
             image_variations=image_variations_list, listing_price=listing_price,
-            merchant=result_row[config.MERCHANT_FIELD])
+            merchant=result_row[config.MERCHANT_FIELD], is_active=is_active)
         return product_read
 
     @staticmethod
@@ -57,6 +58,7 @@ class DatabaseApi:
                   f"{', ' + config.IMAGE_VARIATIONS_FIELD if product_read.image_variations else ''}" \
                   f", {config.READ_TIME_FIELD}" \
                   f"{', ' + config.LISTING_PRICE_FIELD if product_read.listing_price else ''}" \
+                  f"{', ' + config.IS_ACTIVE_FIELD if product_read.is_active is not None else ''}" \
                   f", {config.MERCHANT_FIELD}) "
         values = f"VALUES ('{product_read.asin}'"
         if product_read.image_variations:
@@ -65,6 +67,8 @@ class DatabaseApi:
         values += f", '{product_read.read_time}'"
         if product_read.listing_price:
             values += f", {product_read.listing_price}"
+        if product_read.is_active is not None:
+            values += f", {product_read.is_active}"
         values += f", '{product_read.merchant}')"
         query = f"INSERT INTO {table_name} {columns} {values}"
         return query

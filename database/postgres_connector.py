@@ -32,6 +32,7 @@ class PostgresConnector(BaseConnector):
                f'{config.READ_TIME_FIELD} TIMESTAMP, ' \
                f'{config.IMAGE_VARIATIONS_FIELD} JSON, ' \
                f'{config.LISTING_PRICE_FIELD} FLOAT, ' \
+               f'{config.IS_ACTIVE_FIELD} BOOLEAN, ' \
                f'{config.MERCHANT_FIELD} TEXT, ' \
                f'PRIMARY KEY ({config.ASIN_FIELD}, {config.READ_TIME_FIELD}))'
 

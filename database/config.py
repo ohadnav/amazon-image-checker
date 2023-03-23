@@ -4,6 +4,7 @@ ASIN_FIELD = 'asin'
 IMAGE_VARIATIONS_FIELD = 'image_variations'
 READ_TIME_FIELD = 'read_time'
 LISTING_PRICE_FIELD = 'listing_price'
+IS_ACTIVE_FIELD = 'is_active'
 MERCHANT_FIELD = 'merchant'
 
 AB_TEST_RUNS_TABLE = 'ab_test_runs'

@@ -45,9 +45,10 @@ class BaseConnectorTestCase(BaseTestCase):
             ImageVariation('PT01', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1B.jpg', 500, 500),
             ImageVariation('PT02', 'https://m.media-amazon.com/images/I/51Zy9Z9Z1C.jpg', 500, 500)]
         self.product_read_today = ProductRead(
-            self.asin_active, self.today, self.image_variations_of_active_asin, self.listing_price1, self.merchant)
+            self.asin_active, self.today, self.image_variations_of_active_asin, self.listing_price1, self.merchant,
+            True)
         self.product_read_yesterday = ProductRead(
-            self.asin_active, self.two_days_ago_date, self.image_variations2, self.listing_price2, self.merchant)
+            self.asin_active, self.two_days_ago_date, self.image_variations2, self.listing_price2, self.merchant, True)
         self.product_read_diff = ProductReadDiff(self.product_read_today, self.product_read_yesterday)
         self.ab_test_record1 = ABTestRecord(
             {

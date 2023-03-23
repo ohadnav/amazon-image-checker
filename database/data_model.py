@@ -32,6 +32,7 @@ class ProductRead:
     image_variations: List[ImageVariation]
     listing_price: Optional[float]
     merchant: str
+    is_active: Optional[bool] = None
 
 
 @dataclass
@@ -76,12 +77,17 @@ class ProductReadDiff(ProductRead):
                 self.listing_price = current.listing_price
             else:
                 self.listing_price = None
+            if last.is_active is not None and current.is_active is not None and current.is_active != last.is_active:
+                self.is_active = current.is_active
+            else:
+                self.is_active = None
         else:
             self.listing_price = current.listing_price
+            self.is_active = current.is_active
 
     @staticmethod
     def _calculate_variants_with_diff(current: ProductRead, last: ProductRead) -> List[ImageVariation]:
         return [variant for variant in current.image_variations if variant not in last.image_variations]
 
     def has_diff(self) -> bool:
-        return bool(self.image_variations) or bool(self.listing_price)
+        return bool(self.image_variations) or bool(self.listing_price) or bool(self.is_active)
