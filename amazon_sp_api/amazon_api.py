@@ -44,12 +44,13 @@ class AmazonApi:
         logging.debug(f'Getting price for asin: {asin}')
         self.init_credentials(ab_test_record=ab_test_record)
         response = Products(credentials=self.current_credentials).get_competitive_pricing_for_asins([asin])
-        logging.debug(f'Payload for {asin} competitive pricing: {response.payload[0]["Product"]["CompetitivePricing"]}')
         try:
+            logging.debug(
+                f'Payload for {asin} competitive pricing: {response.payload[0]["Product"]["CompetitivePricing"]}')
             return \
                 response.payload[0]['Product']['CompetitivePricing']['CompetitivePrices'][0]['Price']['ListingPrice'][
                     'Amount']
-        except IndexError:
+        except (KeyError, IndexError):
             return None
 
     @throttle_retry()

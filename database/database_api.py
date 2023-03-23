@@ -36,27 +36,42 @@ class DatabaseApi:
 
     @staticmethod
     def _parse_query_result_row_to_product_read(result_row: dict) -> ProductRead:
-        image_variations_list = [ImageVariation(**image_variation) for image_variation in
-                                 result_row[config.IMAGE_VARIATIONS_FIELD]]
+        if config.IMAGE_VARIATIONS_FIELD in result_row and isinstance(result_row[config.IMAGE_VARIATIONS_FIELD], list):
+            image_variations_list = [
+                ImageVariation(**image_variation) for image_variation in result_row[
+                    config.IMAGE_VARIATIONS_FIELD]]
+        else:
+            image_variations_list = []
+        listing_price = result_row[config.LISTING_PRICE_FIELD] if config.LISTING_PRICE_FIELD in result_row else None
         product_read = ProductRead(
             asin=result_row[config.ASIN_FIELD], read_time=result_row[config.READ_TIME_FIELD],
-            image_variations=image_variations_list, listing_price=result_row[config.LISTING_PRICE_FIELD],
+            image_variations=image_variations_list, listing_price=listing_price,
             merchant=result_row[config.MERCHANT_FIELD])
         return product_read
 
     @staticmethod
     def _insert_product_read_query(product_read: ProductRead, table_name: str):
         # convert image_variations from list to str matching the format in the database
-        image_variations_json = DatabaseApi._prepare_json_to_sql_insert_query(product_read)
-        query = f"INSERT INTO {table_name} " \
-                f"({config.ASIN_FIELD}, {config.IMAGE_VARIATIONS_FIELD}, {config.READ_TIME_FIELD}, " \
-                f"{config.LISTING_PRICE_FIELD}, {config.MERCHANT_FIELD}) " \
-                f"VALUES ('{product_read.asin}', '{image_variations_json}', '{product_read.read_time}', " \
-                f"{product_read.listing_price}, '{product_read.merchant}')"
+        assert product_read.image_variations or product_read.listing_price
+        columns = f"({config.ASIN_FIELD}" \
+                  f"{', ' + config.IMAGE_VARIATIONS_FIELD if product_read.image_variations else ''}" \
+                  f", {config.READ_TIME_FIELD}" \
+                  f"{', ' + config.LISTING_PRICE_FIELD if product_read.listing_price else ''}" \
+                  f", {config.MERCHANT_FIELD}) "
+        values = f"VALUES ('{product_read.asin}'"
+        if product_read.image_variations:
+            image_variations_json = DatabaseApi._prepare_json_to_sql_insert_query(product_read)
+            values += f", '{image_variations_json}'"
+        values += f", '{product_read.read_time}'"
+        if product_read.listing_price:
+            values += f", {product_read.listing_price}"
+        values += f", '{product_read.merchant}')"
+        query = f"INSERT INTO {table_name} {columns} {values}"
         return query
 
     @staticmethod
     def _prepare_json_to_sql_insert_query(product_read: ProductRead) -> SQLQuery:
+        assert product_read.image_variations
         return str(asdict(product_read)['image_variations']).replace("'", '"')
 
     def insert_product_read(self, product_read: ProductRead, table_name: str = None):
