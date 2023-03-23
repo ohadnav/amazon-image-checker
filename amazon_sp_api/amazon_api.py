@@ -54,6 +54,19 @@ class AmazonApi:
             return None
 
     @throttle_retry()
+    def is_active(self, asin: str, ab_test_record: ABTestRecord) -> bool | None:
+        logging.debug(f'Checking isactive for: {asin}')
+        self.init_credentials(ab_test_record=ab_test_record)
+        response = Products(credentials=self.current_credentials).get_competitive_pricing_for_asins([asin])
+        try:
+            logging.debug(
+                f'Payload for {asin} pricing (for inactive check): '
+                f'{response.payload[0]["Product"]["CompetitivePricing"]["CompetitivePrices"]}')
+            return len(response.payload[0]['Product']['CompetitivePricing']['CompetitivePrices']) > 0
+        except (KeyError, IndexError):
+            return None
+
+    @throttle_retry()
     def post_feed(self, feed_url: str, ab_test_run: ABTestRun) -> int:
         logging.debug(f'Posting feed: {feed_url}')
         self.init_credentials(ab_test_run=ab_test_run)
@@ -79,7 +92,7 @@ class AmazonApi:
                 url_content = url_response.read()
             bytes_io = BytesIO(url_content)
         else:
-            with open(feed_url, "rb") as local_file:
+            with open(feed_url, 'rb') as local_file:
                 bytes_io = BytesIO(local_file.read())
         temp_file_path = f'{int(time.time())}.xlsm'
         with open(temp_file_path, 'wb') as temp_file:
