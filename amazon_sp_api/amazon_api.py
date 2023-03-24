@@ -45,12 +45,17 @@ class AmazonApi:
         self.init_credentials(ab_test_record=ab_test_record)
         response = Products(credentials=self.current_credentials).get_competitive_pricing_for_asins([asin])
         try:
-            logging.debug(
-                f'Payload for {asin} competitive pricing: {response.payload[0]["Product"]["CompetitivePricing"]}')
-            return \
-                response.payload[0]['Product']['CompetitivePricing']['CompetitivePrices'][0]['Price']['ListingPrice'][
-                    'Amount']
+            competitive_prices = response.payload[0]["Product"]["CompetitivePricing"]["CompetitivePrices"]
+            logging.debug(f'Payload for {asin} competitive pricing: {competitive_prices}')
+            new_price = min(
+                [price_data['Price']['ListingPrice']['Amount'] for price_data in competitive_prices if
+                    price_data['condition'] == 'New'])
+            return new_price
         except (KeyError, IndexError):
+            logging.debug(f'Missing pricing data for {asin}')
+            return None
+        except ValueError:
+            logging.debug(f'Missing pricing data for new items for {asin}')
             return None
 
     @throttle_retry()
