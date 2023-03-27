@@ -56,7 +56,7 @@ class ABTestTaskTestCase(BaseConnectorTestCase):
     def test_task_integration(self):
         self.ab_test_task = ABTestTask()
         self.ab_test_task.database_api = DatabaseApi(LocalPostgresConnector())
-        self.insert_credentials()
+        self.insert_credentials(self.merchant, self.default_credentials())
         self.ab_test_task.should_run_ab_test = MagicMock(return_value=True)
         with freeze_time(
                 datetime.strptime('2023-01-16 00:01', airtable.config.PYTHON_TIME_FORMAT).astimezone(

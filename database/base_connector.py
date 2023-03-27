@@ -23,7 +23,7 @@ class BaseConnector:
         try:
             self.connect()
             if verbose:
-                logging.info(f'running query: {query}')
+                logging.debug(f'running query: {query}')
             self.cursor.execute(query)
             self.connection.commit()
             if self.should_fetch(query):
@@ -35,7 +35,7 @@ class BaseConnector:
             if self.is_connected():
                 self.close_connection()
             if verbose:
-                logging.debug(f'got results {results} for {query}')
+                logging.info(f'got results {results} for {query}')
             return results
 
     def should_fetch(self, query: SQLQuery) -> bool:

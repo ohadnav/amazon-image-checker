@@ -27,9 +27,9 @@ class ABTestTask(BaseTask):
         ab_test_run.feed_id = self.amazon_api.post_feed(
             ab_test_record.get_flatfile_url_for_record(), ab_test_run)
         self.database_api.update_feed_id(ab_test_run)
-        logging.debug(f'Finished running AB test: {ab_test_run}')
+        logging.info(f'Finished running AB test: {ab_test_run}')
 
 
 if __name__ == '__main__':
-    util.initialize_debug_logging()
+    util.initialize_logging(logging_level=logging.DEBUG)
     ABTestTask().run()

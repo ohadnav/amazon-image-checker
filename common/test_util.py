@@ -15,7 +15,7 @@ TEST_FLATFILE_B = f'{os.path.dirname(os.path.dirname(os.path.realpath(__file__))
 class BaseTestCase(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        util.initialize_debug_logging()
+        util.initialize_logging(logging_level=logging.DEBUG)
 
     def setUp(self) -> None:
         logging.info(f'****  setUp for {self._testMethodName} of {type(self).__name__}')

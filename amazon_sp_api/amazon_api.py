@@ -36,7 +36,7 @@ class AmazonApi:
             images.append(ImageVariation(image['variant'], image['link'], image['height'], image['width']))
         image_variations = [from_dict(ImageVariation, image) for image in images_response]
         unique_image_variations = sorted(list(set([image_variation.variant for image_variation in image_variations])))
-        logging.debug(f'Got {unique_image_variations} images for asin: {asin}')
+        logging.info(f'Got {unique_image_variations} images for asin: {asin}')
         return image_variations
 
     @throttle_retry()
@@ -46,16 +46,16 @@ class AmazonApi:
         response = Products(credentials=self.current_credentials).get_competitive_pricing_for_asins([asin])
         try:
             competitive_prices = response.payload[0]["Product"]["CompetitivePricing"]["CompetitivePrices"]
-            logging.debug(f'Payload for {asin} competitive pricing: {competitive_prices}')
+            logging.info(f'Payload for {asin} competitive pricing: {competitive_prices}')
             new_price = min(
                 [price_data['Price']['ListingPrice']['Amount'] for price_data in competitive_prices if
                     price_data['condition'] == 'New'])
             return new_price
         except (KeyError, IndexError):
-            logging.debug(f'Missing pricing data for {asin}')
+            logging.info(f'Missing pricing data for {asin}')
             return None
         except ValueError:
-            logging.debug(f'Missing pricing data for new items for {asin}')
+            logging.info(f'Missing pricing data for new items for {asin}')
             return None
 
     @throttle_retry()
@@ -64,10 +64,9 @@ class AmazonApi:
         self.init_credentials(ab_test_record=ab_test_record)
         response = Products(credentials=self.current_credentials).get_competitive_pricing_for_asins([asin])
         try:
-            logging.debug(
-                f'Payload for {asin} pricing (for is active check): '
-                f'{response.payload[0]["Product"]["CompetitivePricing"]["CompetitivePrices"]}')
-            return len(response.payload[0]['Product']['CompetitivePricing']['CompetitivePrices']) > 0
+            competitive_prices = response.payload[0]['Product']['CompetitivePricing']['CompetitivePrices']
+            logging.info(f'Payload for {asin} pricing (for is active check): {competitive_prices}')
+            return len(competitive_prices) > 0
         except (KeyError, IndexError):
             return None
 
@@ -87,7 +86,7 @@ class AmazonApi:
             os.remove(temp_file_path)
         logging.debug(f'Payload for feed {feed_url} is {response[1].payload}')
         payload_feed_id = int(response[1].payload['feedId'])
-        logging.debug(f'Got feed_id: {payload_feed_id}')
+        logging.info(f'Got feed_id: {payload_feed_id} for {feed_url}')
         return payload_feed_id
 
     @staticmethod

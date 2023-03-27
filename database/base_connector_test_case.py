@@ -87,11 +87,27 @@ class BaseConnectorTestCase(BaseTestCase):
             return result[0][config.FEED_ID_FIELD]
         return None
 
-    def insert_credentials(self):
-        self.database_api.insert_credentials(
-            self.merchant, CredentialsSPApi(lwa_app_id=os.environ['LWA_APP_ID_TEST'],
-                                            lwa_client_secret=os.environ['LWA_CLIENT_SECRET_TEST'],
-                                            sp_api_secret_key=os.environ['SP_API_SECRET_KEY_TEST'],
-                                            sp_api_role_arn=os.environ['SP_API_ROLE_ARN_TEST'],
-                                            sp_api_access_key=os.environ['SP_API_ACCESS_KEY_TEST'],
-                                            sp_api_refresh_token=os.environ['SP_API_REFRESH_TOKEN_TEST']))
+    @staticmethod
+    def _insert_credentials_query(merchant: str, credentials_lwa: CredentialsSPApi) -> str:
+        query = f"INSERT INTO {config.MERCHANTS_TABLE} " \
+                f"({config.LWA_APP_ID_FIELD}, {config.LWA_CLIENT_SECRET_FIELD}, {config.SP_API_SECRET_KEY_FIELD}, " \
+                f"{config.SP_API_ROLE_ARN_FIELD}, {config.SP_API_ACCESS_KEY_FIELD}, " \
+                f"{config.SP_API_REFRESH_TOKEN_FIELD}, {config.MERCHANT_FIELD}) " \
+                f"VALUES ('{credentials_lwa.lwa_app_id}', '{credentials_lwa.lwa_client_secret}', " \
+                f"'{credentials_lwa.sp_api_secret_key}', '{credentials_lwa.sp_api_role_arn}', " \
+                f"'{credentials_lwa.sp_api_access_key}', '{credentials_lwa.sp_api_refresh_token}', '{merchant}')"
+        return query
+
+    @staticmethod
+    def default_credentials() -> CredentialsSPApi:
+        return CredentialsSPApi(
+            lwa_app_id=os.environ['LWA_APP_ID_TEST'],
+            lwa_client_secret=os.environ['LWA_CLIENT_SECRET_TEST'],
+            sp_api_secret_key=os.environ['SP_API_SECRET_KEY_TEST'],
+            sp_api_role_arn=os.environ['SP_API_ROLE_ARN_TEST'],
+            sp_api_access_key=os.environ['SP_API_ACCESS_KEY_TEST'],
+            sp_api_refresh_token=os.environ['SP_API_REFRESH_TOKEN_TEST'])
+
+    def insert_credentials(self, merchant: str, credentials_lwa: CredentialsSPApi):
+        self.database_api.connector.run_query(
+            BaseConnectorTestCase._insert_credentials_query(merchant, credentials_lwa))

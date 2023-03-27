@@ -2,7 +2,8 @@ from amazon_sp_api.amazon_api import AmazonApi
 from common import test_util
 from database.base_connector_test_case import BaseConnectorTestCase
 
-TEST_ASIN = 'B07Z95MG3S'
+# Need to refresh the asin to an active one sometimes
+TEST_ASIN = 'B08JYC691S'
 TEST_PRICE = 11.99
 
 
@@ -14,7 +15,7 @@ class TestAmazonApi(BaseConnectorTestCase):
     def setUp(self) -> None:
         super(TestAmazonApi, self).setUp()
         self.amazon_api = AmazonApi(self.database_api)
-        self.insert_credentials()
+        self.insert_credentials(self.merchant, self.default_credentials())
 
     def test_get_images(self):
         images = self.amazon_api.get_images(TEST_ASIN, self.ab_test_record1)

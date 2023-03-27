@@ -15,6 +15,6 @@ def ab_test_task_scheduler():
 
 
 if __name__ == '__main__':
-    util.initialize_debug_logging()
+    util.initialize_logging(logging_level=logging.DEBUG)
     logging.info(f'Starting scheduler {os.path.basename(__file__)}')
     scheduler.start()

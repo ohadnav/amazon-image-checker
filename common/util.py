@@ -16,11 +16,11 @@ def set_default_logging_config():
 run_log_init_once = False
 
 
-def initialize_debug_logging():
+def initialize_logging(logging_level=logging.INFO):
     global run_log_init_once
     if not run_log_init_once:
         logger = logging.getLogger()
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging_level)
         set_logging_stream_to_stdout(logger)
     run_log_init_once = True
 

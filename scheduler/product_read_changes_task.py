@@ -65,5 +65,5 @@ class ProductReadChangesTask(BaseTask):
 
 
 if __name__ == '__main__':
-    util.initialize_debug_logging()
+    util.initialize_logging(logging_level=logging.DEBUG)
     ProductReadChangesTask().run()

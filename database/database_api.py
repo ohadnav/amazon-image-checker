@@ -165,20 +165,6 @@ class DatabaseApi:
                                 sp_api_access_key=result_row[config.SP_API_ACCESS_KEY_FIELD],
                                 sp_api_refresh_token=result_row[config.SP_API_REFRESH_TOKEN_FIELD])
 
-    @staticmethod
-    def _insert_credentials_query(merchant: str, credentials_lwa: CredentialsSPApi) -> str:
-        query = f"INSERT INTO {config.MERCHANTS_TABLE} " \
-                f"({config.LWA_APP_ID_FIELD}, {config.LWA_CLIENT_SECRET_FIELD}, {config.SP_API_SECRET_KEY_FIELD}, " \
-                f"{config.SP_API_ROLE_ARN_FIELD}, {config.SP_API_ACCESS_KEY_FIELD}, " \
-                f"{config.SP_API_REFRESH_TOKEN_FIELD}, {config.MERCHANT_FIELD}) " \
-                f"VALUES ('{credentials_lwa.lwa_app_id}', '{credentials_lwa.lwa_client_secret}', " \
-                f"'{credentials_lwa.sp_api_secret_key}', '{credentials_lwa.sp_api_role_arn}', " \
-                f"'{credentials_lwa.sp_api_access_key}', '{credentials_lwa.sp_api_refresh_token}', '{merchant}')"
-        return query
-
-    def insert_credentials(self, merchant: str, credentials_sp_api: CredentialsSPApi):
-        self.connector.run_query(DatabaseApi._insert_credentials_query(merchant, credentials_sp_api))
-
     def get_credentials_from_merchant(self, merchant: str) -> CredentialsSPApi:
         results = self.connector.run_query(self._credentials_from_merchant_query(merchant), verbose=False)
         return self._parse_credentials_lwa(results[0])

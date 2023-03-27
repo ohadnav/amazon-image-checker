@@ -72,11 +72,13 @@ class TestDatabaseApi(BaseConnectorTestCase):
 
     def test_get_credentials_from_merchant(self):
         merchant2 = self.merchant + '2'
-        credetials_lwa1 = CredentialsSPApi('app_id1', 'client_secret1', 'access_key1', 'refresh1', 'sp_api_secret1',
-                                           'arn1')
-        credetials_lwa2 = CredentialsSPApi('app_id2', 'client_secret2', 'access_key2', 'refresh2', 'sp_api_secret2',
-                                           'arn2')
-        self.database_api.insert_credentials(self.merchant, credetials_lwa1)
-        self.database_api.insert_credentials(merchant2, credetials_lwa2)
+        credetials_lwa1 = CredentialsSPApi(
+            'app_id1', 'client_secret1', 'access_key1', 'refresh1', 'sp_api_secret1',
+            'arn1')
+        credetials_lwa2 = CredentialsSPApi(
+            'app_id2', 'client_secret2', 'access_key2', 'refresh2', 'sp_api_secret2',
+            'arn2')
+        self.insert_credentials(self.merchant, credetials_lwa1)
+        self.insert_credentials(merchant2, credetials_lwa2)
         actual_credentials = self.database_api.get_credentials_from_merchant(self.merchant)
         self.assertEqual(actual_credentials, credetials_lwa1)
