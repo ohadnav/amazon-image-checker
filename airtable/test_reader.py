@@ -14,7 +14,8 @@ ACTIVE_TEST_ID = 1
 TEST_ASIN = 'B08LKMP5QX'
 
 
-@freeze_time(datetime.strptime('2023-01-16 00:01', config.PYTHON_TIME_FORMAT).astimezone(timezone(config.TIMEZONE)))
+@freeze_time(
+    datetime.strptime('2023-01-16 00:01', f'{config.PYTHON_TIME_FORMAT}').astimezone(timezone(config.TIMEZONE)))
 class BaseAirtableReaderTestCase(BaseTestCase):
     def setUp(self) -> None:
         super(BaseAirtableReaderTestCase, self).setUp()

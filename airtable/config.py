@@ -7,8 +7,8 @@ TEST_ID_FIELD = 'test_id'
 MERCHANT_FIELD = 'Merchant'
 
 PYTHON_TIME_FORMAT = '%Y-%m-%d %H:%M'
-AIRTABLE_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S.000Z'
-TIMEZONE = 'Asia/Jerusalem'
+AIRTABLE_TIME_FORMAT = '%Y-%m-%d'
+TIMEZONE = 'US/Pacific'
 
 FLATFILE_SHEET_NAME = 'Template'
 FLATFILE_ASIN_COLUMN = 'Product ID'
