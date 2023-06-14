@@ -5,7 +5,7 @@ import os
 import time
 import urllib.request
 from io import FileIO, BytesIO
-from typing import List
+from typing import List, Optional
 
 from dacite import from_dict
 from sp_api.api import CatalogItems, Feeds, Products
@@ -21,7 +21,7 @@ from database.database_api import DatabaseApi
 class AmazonApi:
     def __init__(self, database_api: DatabaseApi):
         self.last_merchant = None
-        self.current_credentials = None
+        self.current_credentials: Optional[dict] = None
         self.database_api = database_api
 
     @throttle_retry()
