@@ -8,19 +8,24 @@ import sys
 
 import requests
 
+import airtable.config
+from ab_test_record import ABTestRecord
 from amazon_sp_api.amazon_util import AmazonUtil
 from database.data_model import ProductReadDiff
 
 
-def notify(product_read_diff: ProductReadDiff):
-    message = create_message_for_product_read_changes(product_read_diff)
+def notify(product_read_diff: ProductReadDiff, ab_test_record: ABTestRecord):
+    message = create_message_for_product_read_changes(product_read_diff, ab_test_record)
     logging.debug(f'Notifying for asin {product_read_diff.asin}: {message}')
     send_message_to_slack(message)
 
 
-def create_message_for_product_read_changes(product_read_diff: ProductReadDiff) -> str:
+def create_message_for_product_read_changes(product_read_diff: ProductReadDiff, ab_test_record: ABTestRecord) -> str:
     asin_url = AmazonUtil.get_url_from_asin(product_read_diff.asin)
-    change_message = f'Changes in {asin_url}:'
+    asin_url_formatted = f'<{asin_url}|{product_read_diff.asin}>'
+    change_message = f'Changes in {asin_url_formatted} (test ID=' \
+                     f'{ab_test_record.fields[airtable.config.TEST_ID_FIELD]}, ' \
+                     f'{ab_test_record.fields[airtable.config.MERCHANT_FIELD]}):'
     if product_read_diff.image_variations:
         variations_with_diff = set([image_variation.variant for image_variation in product_read_diff.image_variations])
         change_message += f' changed image variations {", ".join(variations_with_diff)}'

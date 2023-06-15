@@ -2,7 +2,6 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 from freezegun import freeze_time
-from pytz import timezone
 
 import airtable.config
 from airtable.test_reader import ACTIVE_TEST_ID
@@ -10,6 +9,7 @@ from database.database_api import DatabaseApi
 from database.local_postgres_connector import LocalPostgresConnector
 from database.test_database_api import BaseConnectorTestCase
 from scheduler.ab_test_task import ABTestTask
+from test_ab_test_record import TestABTestRecordTestCase
 
 
 class ABTestTaskTestCase(BaseConnectorTestCase):
@@ -59,8 +59,8 @@ class ABTestTaskTestCase(BaseConnectorTestCase):
         self.insert_credentials(self.merchant, self.default_credentials())
         self.ab_test_task.should_run_ab_test = MagicMock(return_value=True)
         with freeze_time(
-                datetime.strptime('2023-01-16 00:01', airtable.config.PYTHON_TIME_FORMAT).astimezone(
-                    timezone(airtable.config.TIMEZONE))):
+                datetime.strptime(
+                    TestABTestRecordTestCase.start_datetime, airtable.config.PYTHON_DATETIME_TIMEZONE_FORMAT)):
             active_ab_test_records = self.ab_test_task.airtable_reader.get_active_ab_test_records()
             active_ab_test = active_ab_test_records[ACTIVE_TEST_ID]
         self.assertIsNone(self.ab_test_task.database_api.get_last_run_for_ab_test(active_ab_test))

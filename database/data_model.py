@@ -57,7 +57,7 @@ class ABTestRun:
     @staticmethod
     def from_record(ab_test_record: ABTestRecord):
         return ABTestRun(
-            test_id=ab_test_record.fields[airtable.config.TEST_ID_FIELD], run_time=datetime.now(),
+            test_id=ab_test_record.fields[airtable.config.TEST_ID_FIELD], run_time=datetime.utcnow(),
             variation=ab_test_record.current_variation(),
             merchant=ab_test_record.fields[airtable.config.MERCHANT_FIELD])
 

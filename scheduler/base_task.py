@@ -17,5 +17,5 @@ class BaseTask:
         pass
 
     def run(self):
-        logging.info(f'Running {self.__class__.__name__}  time is {datetime.now()}')
+        logging.info(f'Running {self.__class__.__name__}  time is {datetime.utcnow()}')
         self.task()

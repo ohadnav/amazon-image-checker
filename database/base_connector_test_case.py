@@ -29,8 +29,6 @@ class BaseConnectorTestCase(BaseTestCase):
         self.two_days_ago_date = self.today - timedelta(days=2)
         self.two_days_ago_str = self.two_days_ago_date.strftime('%Y-%m-%d')
         self.two_days_from_now_str = (self.today + timedelta(days=2)).strftime('%Y-%m-%d')
-        self.start_time = '00:00:00'
-        self.end_time = '23:59:59'
         self.merchant = 'Thunderfit'
         self.asin_active = 'B01N4J6L3I'
         self.asin_inactive = 'B07JQZQZ4Z'
@@ -54,8 +52,9 @@ class BaseConnectorTestCase(BaseTestCase):
             {
                 airtable.config.TEST_ID_FIELD: 1,
                 airtable.config.MERCHANT_FIELD: self.merchant,
-                airtable.config.START_DATE_FIELD: self.two_days_ago_date.strftime(airtable.config.AIRTABLE_TIME_FORMAT),
-                airtable.config.END_DATE_FIELD: self.today.strftime(airtable.config.AIRTABLE_TIME_FORMAT),
+                airtable.config.START_DATE_FIELD: self.two_days_ago_date.strftime(
+                    airtable.config.AIRTABLE_DATETIME_FORMAT),
+                airtable.config.END_DATE_FIELD: self.today.strftime(airtable.config.AIRTABLE_DATETIME_FORMAT),
                 airtable.config.ROTATION_FIELD: 24,
                 airtable.config.FLATFILE_FIELD['A']: [{
                     'filename': os.path.basename(TEST_FLATFILE_A),

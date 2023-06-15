@@ -40,9 +40,9 @@ class ProductReadChangesTask(BaseTask):
         if last_product_read:
             product_read_diff = self.is_valid_change(new_product_read, last_product_read)
             if product_read_diff:
-                self.process_product_read_changed(product_read_diff)
+                self.process_product_read_changed(product_read_diff, ab_test_record)
 
-    def process_product_read_changed(self, product_read_diff: ProductReadDiff):
+    def process_product_read_changed(self, product_read_diff: ProductReadDiff, ab_test_record: ABTestRecord):
         images_changed = set([image_variation.variant for image_variation in product_read_diff.image_variations])
         logging.info(
             f'Found product read changes for asin {product_read_diff.asin}'
@@ -50,10 +50,10 @@ class ProductReadChangesTask(BaseTask):
             f'{" in listing price " + str(product_read_diff.listing_price) if product_read_diff.listing_price else ""}'
             f'{" in is_active " + str(product_read_diff.is_active) if product_read_diff.is_active is not None else ""}')
         self.database_api.insert_product_read_changes(product_read_diff)
-        notify(product_read_diff)
+        notify(product_read_diff, ab_test_record)
 
     def insert_new_product_read(self, asin: ASIN, ab_test_record: ABTestRecord) -> ProductRead:
-        read_time = datetime.now()
+        read_time = datetime.utcnow()
         images = self.amazon_api.get_images(asin, ab_test_record)
         listing_price = self.amazon_api.get_listing_price(asin, ab_test_record)
         is_active = self.amazon_api.is_active(asin, ab_test_record)
