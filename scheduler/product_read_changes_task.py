@@ -6,14 +6,16 @@ from typing import Optional
 
 import airtable.config
 from airtable.ab_test_record import ABTestRecord
+from amazon_sp_api.amazon_util import AmazonUtil
 from common import util
 from database.data_model import ASIN, ProductRead, ProductReadDiff
-from notify.slack_notifier import notify
+from notification.slack_notifier import SlackNotificationManager
 from scheduler.base_task import BaseTask
 
 
 class ProductReadChangesTask(BaseTask):
     def __init__(self):
+        self.notification_manager = SlackNotificationManager()
         super(ProductReadChangesTask, self).__init__()
 
     def is_valid_change(self, current: ProductRead, last: ProductRead) -> Optional[ProductReadDiff]:
@@ -50,7 +52,25 @@ class ProductReadChangesTask(BaseTask):
             f'{" in listing price " + str(product_read_diff.listing_price) if product_read_diff.listing_price else ""}'
             f'{" in is_active " + str(product_read_diff.is_active) if product_read_diff.is_active is not None else ""}')
         self.database_api.insert_product_read_changes(product_read_diff)
-        notify(product_read_diff, ab_test_record)
+        notification_message = self.create_message_for_product_read_changes(product_read_diff, ab_test_record)
+        self.notification_manager.send_message(notification_message)
+
+    def create_message_for_product_read_changes(
+            self, product_read_diff: ProductReadDiff, ab_test_record: ABTestRecord) -> str:
+        asin_url = AmazonUtil.get_url_from_asin(product_read_diff.asin)
+        asin_url_formatted = f'<{asin_url}|{product_read_diff.asin}>'
+        change_message = f'Changes in {asin_url_formatted} (test ID=' \
+                         f'{ab_test_record.fields[airtable.config.TEST_ID_FIELD]}, ' \
+                         f'{ab_test_record.fields[airtable.config.MERCHANT_FIELD]}):'
+        if product_read_diff.image_variations:
+            variations_with_diff = set(
+                [image_variation.variant for image_variation in product_read_diff.image_variations])
+            change_message += f' changed image variations {", ".join(variations_with_diff)}'
+        if product_read_diff.listing_price:
+            change_message += f' listing price changed to {product_read_diff.listing_price}'
+        if product_read_diff.is_active is not None:
+            change_message += f' status changed to {"ACTIVE" if product_read_diff.is_active else "INACTIVE"}'
+        return change_message
 
     def insert_new_product_read(self, asin: ASIN, ab_test_record: ABTestRecord) -> ProductRead:
         read_time = datetime.utcnow()

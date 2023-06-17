@@ -13,6 +13,7 @@ class TestProductReadChangesTask(BaseConnectorTestCase):
         self.product_read_changes_task = ProductReadChangesTask()
         self.product_read_changes_task.database_api = self.local_connector
         self.product_read_changes_task.amazon_api = MagicMock()
+        self.product_read_changes_task.notification_manager = MagicMock()
 
     def test_is_valid_change(self):
         max_hours = int(os.environ['MAX_TIME_DIFFERENCE_IN_HOURS'])
