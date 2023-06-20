@@ -1,5 +1,6 @@
 import logging
 
+import airtable.config
 from airtable.ab_test_record import ABTestRecord
 from common import util
 from database.data_model import ABTestRun
@@ -17,7 +18,11 @@ class ABTestTask(BaseTask):
     def task(self):
         active_ab_test_records = self.airtable_reader.get_active_ab_test_records()
         for ab_test_record in active_ab_test_records.values():
-            if self.should_run_ab_test(ab_test_record):
+            is_going_to_run_ab_test = self.should_run_ab_test(ab_test_record)
+            logging.info(
+                f'Test ID {ab_test_record.fields[airtable.config.TEST_ID_FIELD]} should run = '
+                f'{str(is_going_to_run_ab_test)}')
+            if is_going_to_run_ab_test:
                 self.run_ab_test(ab_test_record)
 
     def run_ab_test(self, ab_test_record: ABTestRecord):
