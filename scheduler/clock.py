@@ -10,7 +10,7 @@ from scheduler.product_read_changes_task import ProductReadChangesTask
 scheduler = BlockingScheduler()
 
 
-@scheduler.scheduled_job('interval', hours=int(os.environ['SCHEDULER_INTERVAL_HOURS']), minutes=7)
+@scheduler.scheduled_job('interval', minutes=15)
 def product_read_changes_task_scheduler():
     ProductReadChangesTask().run()
 

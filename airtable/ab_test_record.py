@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -19,12 +20,19 @@ class ABTestRecord:
             config.AIRTABLE_DATETIME_TIMEZONE_FORMAT)
 
     def _calculate_hours_since_start(self) -> float:
-        return (datetime.utcnow().astimezone(
-            ABTestRecord.amazon_timezone) - self._start_date_to_datetime()).total_seconds() / 3600
+        amazon_time = datetime.utcnow().astimezone(ABTestRecord.amazon_timezone)
+        start_date = self._start_date_to_datetime()
+        hours_since_start = (amazon_time - start_date).total_seconds() / 3600
+        logging_format = '%H:%M%z(%a)'
+        logging.info(
+            f'ID={self.fields[config.TEST_ID_FIELD]}, '
+            f'amz_time={amazon_time.strftime(logging_format)}, start_date={start_date.strftime(logging_format)}, '
+            f'hr_diff={round(hours_since_start, 1)}, utc_now={datetime.utcnow().strftime(logging_format)}')
+        return hours_since_start
 
     def current_variation(self) -> str:
-        hours_diff = self._calculate_hours_since_start()
-        rotations = int(hours_diff / self.fields[config.ROTATION_FIELD])
+        hours_since_start = self._calculate_hours_since_start()
+        rotations = int(hours_since_start / self.fields[config.ROTATION_FIELD])
         return 'B' if rotations % 2 else 'A'
 
     def get_flatfile_for_record(self) -> dict:

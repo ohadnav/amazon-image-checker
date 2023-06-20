@@ -1,8 +1,5 @@
 import logging
-import os
-from datetime import datetime, timedelta
-from time import strptime
-from typing import Optional
+from datetime import datetime
 
 import airtable.config
 from airtable.ab_test_record import ABTestRecord
@@ -18,18 +15,6 @@ class ProductReadChangesTask(BaseTask):
         self.notification_manager = SlackNotificationManager()
         super(ProductReadChangesTask, self).__init__()
 
-    def is_valid_change(self, current: ProductRead, last: ProductRead) -> Optional[ProductReadDiff]:
-        product_read_diff = ProductReadDiff(current, last)
-        max_diff = strptime(os.environ['MAX_TIME_DIFFERENCE_IN_HOURS'], '%H')
-        # convert to timedelta
-        max_delta = timedelta(hours=max_diff.tm_hour)
-        # diff between current and last read time
-        diff = current.read_time - last.read_time
-        # if diff is greater than max diff
-        if diff > max_delta or not product_read_diff.has_diff():
-            return None
-        return product_read_diff
-
     def task(self):
         asins_to_active_ab_test = self.airtable_reader.get_asins_to_active_ab_test()
         for asin, ab_test_record in asins_to_active_ab_test.items():
@@ -38,11 +23,12 @@ class ProductReadChangesTask(BaseTask):
     def process_asin(self, asin: ASIN, ab_test_record: ABTestRecord):
         logging.debug('Processing asin {}'.format(asin))
         last_product_read = self.database_api.get_last_product_read(asin, ab_test_record)
-        new_product_read = self.insert_new_product_read(asin, ab_test_record)
-        if last_product_read:
-            product_read_diff = self.is_valid_change(new_product_read, last_product_read)
-            if product_read_diff:
-                self.process_product_read_changed(product_read_diff, ab_test_record)
+        current_product_read = self.generate_product_read(ab_test_record, asin)
+        product_read_diff = ProductReadDiff(current_product_read, last_product_read)
+        if product_read_diff.has_diff() and last_product_read:
+            self.process_product_read_changed(product_read_diff, ab_test_record)
+        if last_product_read is None or product_read_diff.has_diff():
+            self.database_api.insert_product_read(current_product_read)
 
     def process_product_read_changed(self, product_read_diff: ProductReadDiff, ab_test_record: ABTestRecord):
         images_changed = set([image_variation.variant for image_variation in product_read_diff.image_variations])
@@ -71,7 +57,7 @@ class ProductReadChangesTask(BaseTask):
             change_message += f' changed status to {"ACTIVE" if product_read_diff.is_active else "INACTIVE"}'
         return change_message
 
-    def insert_new_product_read(self, asin: ASIN, ab_test_record: ABTestRecord) -> ProductRead:
+    def generate_product_read(self, ab_test_record: ABTestRecord, asin: ASIN) -> ProductRead:
         read_time = datetime.utcnow()
         images = self.amazon_api.get_images(asin, ab_test_record)
         listing_price = self.amazon_api.get_listing_price(asin, ab_test_record)
@@ -79,7 +65,6 @@ class ProductReadChangesTask(BaseTask):
         new_product_read = ProductRead(
             asin, read_time, images, listing_price,
             ab_test_record.fields[airtable.config.MERCHANT_FIELD], is_active)
-        self.database_api.insert_product_read(new_product_read)
         return new_product_read
 
 

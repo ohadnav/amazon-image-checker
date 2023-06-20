@@ -8,11 +8,6 @@ LOGGING_FORMAT = ('%(filename)s: '
                   '%(message)s')
 
 
-def set_default_logging_config():
-    logging.basicConfig(
-        format=LOGGING_FORMAT, level=logging.INFO if sys.gettrace() else logging.WARNING, stream=sys.stderr)
-
-
 run_log_init_once = False
 
 

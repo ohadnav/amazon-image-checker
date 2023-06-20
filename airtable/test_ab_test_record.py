@@ -14,7 +14,9 @@ class TestABTestRecordTestCase(BaseTestCase):
 
     def test_current_variation(self):
         record1 = ABTestRecord(
-            {config.ROTATION_FIELD: 24,
+            {
+                config.TEST_ID_FIELD: 1,
+                config.ROTATION_FIELD: 24,
                 config.START_DATE_FIELD: TestABTestRecordTestCase.start_date})
         record2 = copy.deepcopy(record1)
         record2.fields[config.ROTATION_FIELD] = 48
