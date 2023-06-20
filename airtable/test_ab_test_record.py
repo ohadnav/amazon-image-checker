@@ -10,7 +10,7 @@ from common.test_util import BaseTestCase
 
 class TestABTestRecordTestCase(BaseTestCase):
     start_date = '2023-01-16'
-    start_datetime = f'{start_date} 04:01 {config.AMAZON_TIMEZONE}'
+    start_datetime = f'{start_date} 04:01 {ABTestRecord.amazon_timezone_str}'
 
     def test_current_variation(self):
         record1 = ABTestRecord(

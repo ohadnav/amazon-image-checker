@@ -13,10 +13,11 @@ from airtable import config
 class ABTestRecord:
     fields: dict
     amazon_timezone = timezone(config.AMAZON_TIMEZONE_NAME)
+    amazon_timezone_str = timezone(config.AMAZON_TIMEZONE_NAME).localize(datetime.utcnow()).strftime('%z')
 
     def _start_date_to_datetime(self) -> datetime:
         return datetime.strptime(
-            f'{self.fields[config.START_DATE_FIELD]} {config.AMAZON_TIMEZONE}',
+            f'{self.fields[config.START_DATE_FIELD]} {ABTestRecord.amazon_timezone_str}',
             config.AIRTABLE_DATETIME_TIMEZONE_FORMAT)
 
     def _calculate_hours_since_start(self) -> float:
