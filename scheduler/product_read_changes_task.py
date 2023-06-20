@@ -59,17 +59,16 @@ class ProductReadChangesTask(BaseTask):
             self, product_read_diff: ProductReadDiff, ab_test_record: ABTestRecord) -> str:
         asin_url = AmazonUtil.get_url_from_asin(product_read_diff.asin)
         asin_url_formatted = f'<{asin_url}|{product_read_diff.asin}>'
-        change_message = f'Changes in {asin_url_formatted} (test ID=' \
-                         f'{ab_test_record.fields[airtable.config.TEST_ID_FIELD]}, ' \
-                         f'{ab_test_record.fields[airtable.config.MERCHANT_FIELD]}):'
+        change_message = f'{asin_url_formatted} ({ab_test_record.fields[airtable.config.MERCHANT_FIELD]}, test ID=' \
+                         f'{ab_test_record.fields[airtable.config.TEST_ID_FIELD]}):'
         if product_read_diff.image_variations:
             variations_with_diff = set(
                 [image_variation.variant for image_variation in product_read_diff.image_variations])
-            change_message += f' changed image variations {", ".join(variations_with_diff)}'
+            change_message += f' changed images {", ".join(variations_with_diff)}'
         if product_read_diff.listing_price:
-            change_message += f' listing price changed to {product_read_diff.listing_price}'
+            change_message += f' changed price to {product_read_diff.listing_price}'
         if product_read_diff.is_active is not None:
-            change_message += f' status changed to {"ACTIVE" if product_read_diff.is_active else "INACTIVE"}'
+            change_message += f' changed status to {"ACTIVE" if product_read_diff.is_active else "INACTIVE"}'
         return change_message
 
     def insert_new_product_read(self, asin: ASIN, ab_test_record: ABTestRecord) -> ProductRead:

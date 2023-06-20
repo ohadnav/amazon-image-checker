@@ -40,7 +40,7 @@
 
 1. [How to define AWS](https://www.loom.com/share/2724f5fcf9844ff3a0012066ba249c7d) for SP API
 2. [How to define LWA](https://www.loom.com/share/55b988571983489cbee66fd029f659a9) from Seller Central
-3. [How to rotate LWA secret](https://www.loom.com/share/151335bbe95e454597931a18ccbecd57) - NEEDS TO BE DONE EVERY 180
+3. [How to rotate LWA secret](https://www.loom.com/share/151335bbe95e454597931a18ccbecd57) - NEEDS TO BE DONE EVERY 90
    DAYS
 
 # How to use the tool
