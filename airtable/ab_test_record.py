@@ -23,7 +23,7 @@ class ABTestRecord:
         amazon_time = datetime.utcnow().astimezone(ABTestRecord.amazon_timezone)
         start_date = self._start_date_to_datetime()
         hours_since_start = (amazon_time - start_date).total_seconds() / 3600
-        logging_format = '%H:%M%z(%a)'
+        # logging_format = '%H:%M%z(%a)'
         # logging.info(
         #     f'ID={self.fields[config.TEST_ID_FIELD]}, '
         #     f'amz_time={amazon_time.strftime(logging_format)}, start_date={start_date.strftime(logging_format)}, '
