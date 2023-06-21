@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -25,10 +24,10 @@ class ABTestRecord:
         start_date = self._start_date_to_datetime()
         hours_since_start = (amazon_time - start_date).total_seconds() / 3600
         logging_format = '%H:%M%z(%a)'
-        logging.info(
-            f'ID={self.fields[config.TEST_ID_FIELD]}, '
-            f'amz_time={amazon_time.strftime(logging_format)}, start_date={start_date.strftime(logging_format)}, '
-            f'hr_diff={round(hours_since_start, 1)}, utc_now={datetime.utcnow().strftime(logging_format)}')
+        # logging.info(
+        #     f'ID={self.fields[config.TEST_ID_FIELD]}, '
+        #     f'amz_time={amazon_time.strftime(logging_format)}, start_date={start_date.strftime(logging_format)}, '
+        #     f'hr_diff={round(hours_since_start, 1)}, utc_now={datetime.utcnow().strftime(logging_format)}')
         return hours_since_start
 
     def current_variation(self) -> str:
