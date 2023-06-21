@@ -1,5 +1,4 @@
 import logging
-import os
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -15,7 +14,7 @@ def product_read_changes_task_scheduler():
     ProductReadChangesTask().run()
 
 
-@scheduler.scheduled_job('interval', hours=int(os.environ['SCHEDULER_INTERVAL_HOURS']))
+@scheduler.scheduled_job('interval', minutes=30)
 def ab_test_task_scheduler():
     ABTestTask().run()
 
