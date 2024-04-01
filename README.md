@@ -22,7 +22,7 @@
    Heroku ([article](https://devcenter.heroku.com/articles/git))
 2. By default, everytime you push new code to `master` the project rebuilds itself (it'll also happen by default if you
    create a new Heroku app)
-3. By default, `scheduler/clocl.py` runs periodically
+3. By default, `scheduler/clock.py` runs periodically
 4. Heroku needs the following addons Heroku Postgres and Heroku Scheduler, and Papertrail is also recommended
 5. [How to set](https://devcenter.heroku.com/articles/config-vars) environment variables for production:
 6. Environment variables are the same as local variables with the following exceptions:
